@@ -18,6 +18,13 @@ The database will be updated in monthly basis for the greater accuracy. Free LIT
 The paid databases are available at https://www.ip2location.com under Premium subscription package.
 
 
+Installation
+=======
+
+```
+go get github.com/ip2location/ip2location-go
+```
+
 Example
 =======
 
