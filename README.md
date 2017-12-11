@@ -80,4 +80,4 @@ The complete database is available at http://www.ip2location.com under subscript
 Copyright
 =========
 
-Copyright (C) 2016 by IP2Location.com, support@ip2location.com
+Copyright (C) 2018 by IP2Location.com, support@ip2location.com
