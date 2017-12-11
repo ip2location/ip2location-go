@@ -1,4 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/ip2location/ip2location-go)](https://goreportcard.com/report/github.com/ip2location/ip2location-go)
+
+
 IP2Location Go Package
 ======================
 
