@@ -347,7 +347,7 @@ func loadmessage (mesg string) Record {
 	x.CountryLong = mesg
 	x.Region = mesg
 	x.City = mesg
-	x.Isp = mesg
+	x.ISP = mesg
 	x.Domain = mesg
 	x.ZipCode = mesg
 	x.TimeZone = mesg
@@ -389,9 +389,9 @@ func Get_city(ipaddress string) Record {
 	return query(ipaddress, City)
 }
 
-// get Isp
+// get ISP
 func Get_isp(ipaddress string) Record {
-	return query(ipaddress, Isp)
+	return query(ipaddress, ISP)
 }
 
 // get Latitude
@@ -554,8 +554,8 @@ func query(ipaddress string, mode uint32) Record {
 				x.City = readstr(readuint32(rowoffset + city_position_offset))
 			}
 			
-			if mode&Isp != 0 && isp_enabled {
-				x.Isp = readstr(readuint32(rowoffset + isp_position_offset))
+			if mode&ISP != 0 && isp_enabled {
+				x.ISP = readstr(readuint32(rowoffset + isp_position_offset))
 			}
 			
 			if mode&Latitude != 0 && latitude_enabled {
@@ -637,7 +637,7 @@ func Printrecord(x Record) {
 	fmt.Printf("country_long: %s\n", x.CountryLong)
 	fmt.Printf("Region: %s\n", x.Region)
 	fmt.Printf("City: %s\n", x.City)
-	fmt.Printf("Isp: %s\n", x.Isp)
+	fmt.Printf("ISP: %s\n", x.ISP)
 	fmt.Printf("Latitude: %f\n", x.Latitude)
 	fmt.Printf("Longitude: %f\n", x.Longitude)
 	fmt.Printf("Domain: %s\n", x.Domain)
