@@ -26,29 +26,6 @@ type ip2locationmeta struct {
 	ipv6columnsize uint32
 }
 
-type IP2Locationrecord struct {
-	Country_short string
-	Country_long string
-	Region string
-	City string
-	Isp string
-	Latitude float32
-	Longitude float32
-	Domain string
-	Zipcode string
-	Timezone string
-	Netspeed string
-	Iddcode string
-	Areacode string
-	Weatherstationcode string
-	Weatherstationname string
-	Mcc string
-	Mnc string
-	Mobilebrand string
-	Elevation float32
-	Usagetype string
-}
-
 var f *os.File
 var meta ip2locationmeta
 
@@ -76,29 +53,6 @@ const api_version string = "8.0.3"
 
 var max_ipv4_range = big.NewInt(4294967295)
 var max_ipv6_range = big.NewInt(0)
-
-const countryshort uint32 = 0x00001
-const countrylong uint32 = 0x00002
-const region uint32 = 0x00004
-const city uint32 = 0x00008
-const isp uint32 = 0x00010
-const latitude uint32 = 0x00020
-const longitude uint32 = 0x00040
-const domain uint32 = 0x00080
-const zipcode uint32 = 0x00100
-const timezone uint32 = 0x00200
-const netspeed uint32 = 0x00400
-const iddcode uint32 = 0x00800
-const areacode uint32 = 0x01000
-const weatherstationcode uint32 = 0x02000
-const weatherstationname uint32 = 0x04000
-const mcc uint32 = 0x08000
-const mnc uint32 = 0x10000
-const mobilebrand uint32 = 0x20000
-const elevation uint32 = 0x40000
-const usagetype uint32 = 0x80000
-
-const all uint32 = countryshort | countrylong | region | city | isp | latitude | longitude | domain | zipcode | timezone | netspeed | iddcode | areacode | weatherstationcode | weatherstationname | mcc | mnc | mobilebrand | elevation | usagetype
 
 const invalid_address string = "Invalid IP address."
 const missing_file string = "Invalid database file."
@@ -386,137 +340,137 @@ func Api_version() string {
 }
 
 // populate record with message
-func loadmessage (mesg string) IP2Locationrecord {
-	var x IP2Locationrecord
+func loadmessage (mesg string) Record {
+	var x Record
 	
-	x.Country_short = mesg
-	x.Country_long = mesg
+	x.CountryShort = mesg
+	x.CountryLong = mesg
 	x.Region = mesg
 	x.City = mesg
 	x.Isp = mesg
 	x.Domain = mesg
-	x.Zipcode = mesg
-	x.Timezone = mesg
-	x.Netspeed = mesg
-	x.Iddcode = mesg
-	x.Areacode = mesg
-	x.Weatherstationcode = mesg
-	x.Weatherstationname = mesg
+	x.ZipCode = mesg
+	x.TimeZone = mesg
+	x.NetSpeed = mesg
+	x.IddCode = mesg
+	x.AreaCode = mesg
+	x.WeatherStationCode = mesg
+	x.WeatherStationName = mesg
 	x.Mcc = mesg
 	x.Mnc = mesg
-	x.Mobilebrand = mesg
-	x.Usagetype = mesg
+	x.MobileBrand = mesg
+	x.UsageType = mesg
 	
 	return x
 }
 
-// get all fields
-func Get_all(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, all)
+// get All fields
+func Get_all(ipaddress string) Record {
+	return query(ipaddress, All)
 }
 
 // get country code
-func Get_country_short(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, countryshort)
+func Get_country_short(ipaddress string) Record {
+	return query(ipaddress, CountryShort)
 }
 
 // get country name
-func Get_country_long(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, countrylong)
+func Get_country_long(ipaddress string) Record {
+	return query(ipaddress, CountryLong)
 }
 
-// get region
-func Get_region(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, region)
+// get Region
+func Get_region(ipaddress string) Record {
+	return query(ipaddress, Region)
 }
 
-// get city
-func Get_city(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, city)
+// get City
+func Get_city(ipaddress string) Record {
+	return query(ipaddress, City)
 }
 
-// get isp
-func Get_isp(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, isp)
+// get Isp
+func Get_isp(ipaddress string) Record {
+	return query(ipaddress, Isp)
 }
 
-// get latitude
-func Get_latitude(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, latitude)
+// get Latitude
+func Get_latitude(ipaddress string) Record {
+	return query(ipaddress, Latitude)
 }
 
-// get longitude
-func Get_longitude(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, longitude)
+// get Longitude
+func Get_longitude(ipaddress string) Record {
+	return query(ipaddress, Longitude)
 }
 
-// get domain
-func Get_domain(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, domain)
+// get Domain
+func Get_domain(ipaddress string) Record {
+	return query(ipaddress, Domain)
 }
 
 // get zip code
-func Get_zipcode(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, zipcode)
+func Get_zipcode(ipaddress string) Record {
+	return query(ipaddress, ZipCode)
 }
 
 // get time zone
-func Get_timezone(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, timezone)
+func Get_timezone(ipaddress string) Record {
+	return query(ipaddress, TimeZone)
 }
 
 // get net speed
-func Get_netspeed(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, netspeed)
+func Get_netspeed(ipaddress string) Record {
+	return query(ipaddress, NetSpeed)
 }
 
 // get idd code
-func Get_iddcode(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, iddcode)
+func Get_iddcode(ipaddress string) Record {
+	return query(ipaddress, IddCode)
 }
 
 // get area code
-func Get_areacode(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, areacode)
+func Get_areacode(ipaddress string) Record {
+	return query(ipaddress, AreaCode)
 }
 
 // get weather station code
-func Get_weatherstationcode(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, weatherstationcode)
+func Get_weatherstationcode(ipaddress string) Record {
+	return query(ipaddress, WeatherStationCode)
 }
 
 // get weather station name
-func Get_weatherstationname(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, weatherstationname)
+func Get_weatherstationname(ipaddress string) Record {
+	return query(ipaddress, WeatherStationName)
 }
 
 // get mobile country code
-func Get_mcc(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, mcc)
+func Get_mcc(ipaddress string) Record {
+	return query(ipaddress, Mcc)
 }
 
 // get mobile network code
-func Get_mnc(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, mnc)
+func Get_mnc(ipaddress string) Record {
+	return query(ipaddress, Mnc)
 }
 
 // get mobile carrier brand
-func Get_mobilebrand(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, mobilebrand)
+func Get_mobilebrand(ipaddress string) Record {
+	return query(ipaddress, MobileBrand)
 }
 
-// get elevation
-func Get_elevation(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, elevation)
+// get Elevation
+func Get_elevation(ipaddress string) Record {
+	return query(ipaddress, Elevation)
 }
 
 // get usage type
-func Get_usagetype(ipaddress string) IP2Locationrecord {
-	return query(ipaddress, usagetype)
+func Get_usagetype(ipaddress string) Record {
+	return query(ipaddress, UsageType)
 }
 
 // main query
-func query(ipaddress string, mode uint32) IP2Locationrecord {
+func query(ipaddress string, mode uint32) Record {
 	x := loadmessage(not_supported) // default message
 	
 	// read metadata
@@ -581,88 +535,88 @@ func query(ipaddress string, mode uint32) IP2Locationrecord {
 		
 		if ipno.Cmp(ipfrom)>=0 && ipno.Cmp(ipto)<0 {
 			if iptype == 6 {
-				rowoffset = rowoffset + 12 // coz below is assuming all columns are 4 bytes, so got 12 left to go to make 16 bytes total
+				rowoffset = rowoffset + 12 // coz below is assuming All columns are 4 bytes, so got 12 left to go to make 16 bytes total
 			}
 			
-			if mode&countryshort == 1 && country_enabled {
-				x.Country_short = readstr(readuint32(rowoffset + country_position_offset))
+			if mode&CountryShort == 1 && country_enabled {
+				x.CountryShort = readstr(readuint32(rowoffset + country_position_offset))
 			}
 			
-			if mode&countrylong != 0 && country_enabled {
-				x.Country_long = readstr(readuint32(rowoffset + country_position_offset) + 3)
+			if mode&CountryLong != 0 && country_enabled {
+				x.CountryLong = readstr(readuint32(rowoffset + country_position_offset) + 3)
 			}
 			
-			if mode&region != 0 && region_enabled {
+			if mode&Region != 0 && region_enabled {
 				x.Region = readstr(readuint32(rowoffset + region_position_offset))
 			}
 			
-			if mode&city != 0 && city_enabled {
+			if mode&City != 0 && city_enabled {
 				x.City = readstr(readuint32(rowoffset + city_position_offset))
 			}
 			
-			if mode&isp != 0 && isp_enabled {
+			if mode&Isp != 0 && isp_enabled {
 				x.Isp = readstr(readuint32(rowoffset + isp_position_offset))
 			}
 			
-			if mode&latitude != 0 && latitude_enabled {
+			if mode&Latitude != 0 && latitude_enabled {
 				x.Latitude = readfloat(rowoffset + latitude_position_offset)
 			}
 			
-			if mode&longitude != 0 && longitude_enabled {
+			if mode&Longitude != 0 && longitude_enabled {
 				x.Longitude = readfloat(rowoffset + longitude_position_offset)
 			}
 			
-			if mode&domain != 0 && domain_enabled {
+			if mode&Domain != 0 && domain_enabled {
 				x.Domain = readstr(readuint32(rowoffset + domain_position_offset))
 			}
 			
-			if mode&zipcode != 0 && zipcode_enabled {
-				x.Zipcode = readstr(readuint32(rowoffset + zipcode_position_offset))
+			if mode&ZipCode != 0 && zipcode_enabled {
+				x.ZipCode = readstr(readuint32(rowoffset + zipcode_position_offset))
 			}
 			
-			if mode&timezone != 0 && timezone_enabled {
-				x.Timezone = readstr(readuint32(rowoffset + timezone_position_offset))
+			if mode&TimeZone != 0 && timezone_enabled {
+				x.TimeZone = readstr(readuint32(rowoffset + timezone_position_offset))
 			}
 			
-			if mode&netspeed != 0 && netspeed_enabled {
-				x.Netspeed = readstr(readuint32(rowoffset + netspeed_position_offset))
+			if mode&NetSpeed != 0 && netspeed_enabled {
+				x.NetSpeed = readstr(readuint32(rowoffset + netspeed_position_offset))
 			}
 			
-			if mode&iddcode != 0 && iddcode_enabled {
-				x.Iddcode = readstr(readuint32(rowoffset + iddcode_position_offset))
+			if mode&IddCode != 0 && iddcode_enabled {
+				x.IddCode = readstr(readuint32(rowoffset + iddcode_position_offset))
 			}
 			
-			if mode&areacode != 0 && areacode_enabled {
-				x.Areacode = readstr(readuint32(rowoffset + areacode_position_offset))
+			if mode&AreaCode != 0 && areacode_enabled {
+				x.AreaCode = readstr(readuint32(rowoffset + areacode_position_offset))
 			}
 			
-			if mode&weatherstationcode != 0 && weatherstationcode_enabled {
-				x.Weatherstationcode = readstr(readuint32(rowoffset + weatherstationcode_position_offset))
+			if mode&WeatherStationCode != 0 && weatherstationcode_enabled {
+				x.WeatherStationCode = readstr(readuint32(rowoffset + weatherstationcode_position_offset))
 			}
 			
-			if mode&weatherstationname != 0 && weatherstationname_enabled {
-				x.Weatherstationname = readstr(readuint32(rowoffset + weatherstationname_position_offset))
+			if mode&WeatherStationName != 0 && weatherstationname_enabled {
+				x.WeatherStationName = readstr(readuint32(rowoffset + weatherstationname_position_offset))
 			}
 			
-			if mode&mcc != 0 && mcc_enabled {
+			if mode&Mcc != 0 && mcc_enabled {
 				x.Mcc = readstr(readuint32(rowoffset + mcc_position_offset))
 			}
 			
-			if mode&mnc != 0 && mnc_enabled {
+			if mode&Mnc != 0 && mnc_enabled {
 				x.Mnc = readstr(readuint32(rowoffset + mnc_position_offset))
 			}
 			
-			if mode&mobilebrand != 0 && mobilebrand_enabled {
-				x.Mobilebrand = readstr(readuint32(rowoffset + mobilebrand_position_offset))
+			if mode&MobileBrand != 0 && mobilebrand_enabled {
+				x.MobileBrand = readstr(readuint32(rowoffset + mobilebrand_position_offset))
 			}
 			
-			if mode&elevation != 0 && elevation_enabled {
+			if mode&Elevation != 0 && elevation_enabled {
 				f, _ := strconv.ParseFloat(readstr(readuint32(rowoffset + elevation_position_offset)), 32)
 				x.Elevation = float32(f)
 			}
 			
-			if mode&usagetype != 0 && usagetype_enabled {
-				x.Usagetype = readstr(readuint32(rowoffset + usagetype_position_offset))
+			if mode&UsageType != 0 && usagetype_enabled {
+				x.UsageType = readstr(readuint32(rowoffset + usagetype_position_offset))
 			}
 			
 			return x
@@ -678,25 +632,25 @@ func query(ipaddress string, mode uint32) IP2Locationrecord {
 }
 
 // for debugging purposes
-func Printrecord(x IP2Locationrecord) {
-	fmt.Printf("country_short: %s\n", x.Country_short)
-	fmt.Printf("country_long: %s\n", x.Country_long)
-	fmt.Printf("region: %s\n", x.Region)
-	fmt.Printf("city: %s\n", x.City)
-	fmt.Printf("isp: %s\n", x.Isp)
-	fmt.Printf("latitude: %f\n", x.Latitude)
-	fmt.Printf("longitude: %f\n", x.Longitude)
-	fmt.Printf("domain: %s\n", x.Domain)
-	fmt.Printf("zipcode: %s\n", x.Zipcode)
-	fmt.Printf("timezone: %s\n", x.Timezone)
-	fmt.Printf("netspeed: %s\n", x.Netspeed)
-	fmt.Printf("iddcode: %s\n", x.Iddcode)
-	fmt.Printf("areacode: %s\n", x.Areacode)
-	fmt.Printf("weatherstationcode: %s\n", x.Weatherstationcode)
-	fmt.Printf("weatherstationname: %s\n", x.Weatherstationname)
-	fmt.Printf("mcc: %s\n", x.Mcc)
-	fmt.Printf("mnc: %s\n", x.Mnc)
-	fmt.Printf("mobilebrand: %s\n", x.Mobilebrand)
-	fmt.Printf("elevation: %f\n", x.Elevation)
-	fmt.Printf("usagetype: %s\n", x.Usagetype)
+func Printrecord(x Record) {
+	fmt.Printf("country_short: %s\n", x.CountryShort)
+	fmt.Printf("country_long: %s\n", x.CountryLong)
+	fmt.Printf("Region: %s\n", x.Region)
+	fmt.Printf("City: %s\n", x.City)
+	fmt.Printf("Isp: %s\n", x.Isp)
+	fmt.Printf("Latitude: %f\n", x.Latitude)
+	fmt.Printf("Longitude: %f\n", x.Longitude)
+	fmt.Printf("Domain: %s\n", x.Domain)
+	fmt.Printf("ZipCode: %s\n", x.ZipCode)
+	fmt.Printf("TimeZone: %s\n", x.TimeZone)
+	fmt.Printf("NetSpeed: %s\n", x.NetSpeed)
+	fmt.Printf("IddCode: %s\n", x.IddCode)
+	fmt.Printf("AreaCode: %s\n", x.AreaCode)
+	fmt.Printf("WeatherStationCode: %s\n", x.WeatherStationCode)
+	fmt.Printf("WeatherStationName: %s\n", x.WeatherStationName)
+	fmt.Printf("Mcc: %s\n", x.Mcc)
+	fmt.Printf("Mnc: %s\n", x.Mnc)
+	fmt.Printf("MobileBrand: %s\n", x.MobileBrand)
+	fmt.Printf("Elevation: %f\n", x.Elevation)
+	fmt.Printf("UsageType: %s\n", x.UsageType)
 }
