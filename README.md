@@ -87,4 +87,4 @@ Use the IPv6 BIN file if you need to query BOTH IPv4 and IPv6 addresses.
 Copyright
 =========
 
-Copyright (C) 2018 by IP2Location.com, support@ip2location.com
+Copyright (C) 2019 by IP2Location.com, support@ip2location.com
