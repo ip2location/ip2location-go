@@ -1,4 +1,4 @@
-package main
+package ip2location
 
 import (
 	"fmt"
