@@ -1,5 +1,5 @@
 // This ip2location package provides a fast lookup of country, region, city, latitude, longitude, ZIP code, time zone,
-// ISP, domain name, connection type, IDD code, area code, weather station code, station name, mcc, mnc,
+// ISP, domain name, connection type, IDD code, area code, weather station code, station name, MCC, MNC,
 // mobile brand, elevation, and usage type from IP address by using IP2Location database.
 package ip2location
 
@@ -30,7 +30,7 @@ type ip2locationmeta struct {
 	ipv6columnsize    uint32
 }
 
-// The IP2Locationrecord struct storees all of the available
+// The IP2Locationrecord struct stores all of the available
 // geolocation info found in the IP2Location database.
 type IP2Locationrecord struct {
 	Country_short      string
@@ -557,7 +557,7 @@ func Get_region(ipaddress string) IP2Locationrecord {
 	return query(ipaddress, region)
 }
 
-// Get_city will return the region name based on the queried IP address.
+// Get_city will return the city name based on the queried IP address.
 func Get_city(ipaddress string) IP2Locationrecord {
 	return query(ipaddress, city)
 }
@@ -832,7 +832,7 @@ func query(ipaddress string, mode uint32) IP2Locationrecord {
 	return x
 }
 
-// Printrecord is used to output the geolocation for debugging purposes.
+// Printrecord is used to output the geolocation data for debugging purposes.
 func Printrecord(x IP2Locationrecord) {
 	fmt.Printf("country_short: %s\n", x.Country_short)
 	fmt.Printf("country_long: %s\n", x.Country_long)
