@@ -225,7 +225,7 @@ func (d *DB)readuint8(pos int64) (uint8, error) {
 	data := make([]byte, 1)
 	_, err := d.f.ReadAt(data, pos-1)
 	if err != nil {
-		return 0, fmt.Errorf("file read failed: %v", err)
+		return 0, err
 	}
 	retval = data[0]
 	return retval, nil
@@ -246,7 +246,7 @@ func (d *DB)readuint32(pos uint32) (uint32, error) {
 	data := make([]byte, 4)
 	_, err := d.f.ReadAt(data, pos2-1)
 	if err != nil {
-		return 0, fmt.Errorf("file read failed: %v", err)
+		return 0, err
 	}
 	buf := bytes.NewReader(data)
 	err = binary.Read(buf, binary.LittleEndian, &retval)
@@ -263,7 +263,7 @@ func (d *DB) readuint128(pos uint32) (*big.Int, error) {
 	data := make([]byte, 16)
 	_, err := d.f.ReadAt(data, pos2-1)
 	if err != nil {
-		return nil, fmt.Errorf("file read failed: %v", err)
+		return nil, err
 	}
 
 	// little endian to big endian
@@ -281,13 +281,13 @@ func (d *DB)readstr(pos uint32) (string, error) {
 	lenbyte := make([]byte, 1)
 	_, err := d.f.ReadAt(lenbyte, pos2)
 	if err != nil {
-		return "", fmt.Errorf("file read failed: %v", err)
+		return "", err
 	}
 	strlen := lenbyte[0]
 	data := make([]byte, strlen)
 	_, err = d.f.ReadAt(data, pos2+1)
 	if err != nil {
-		fmt.Printf("file read failed: %v", err)
+		return "", err
 	}
 	retval = string(data[:strlen])
 	return retval, nil
@@ -309,7 +309,7 @@ func (d *DB)readfloat(pos uint32) (float32, error) {
 	data := make([]byte, 4)
 	_, err := d.f.ReadAt(data, pos2-1)
 	if err != nil {
-		return 0, fmt.Errorf("file read failed: %v", err)
+		return 0, err
 	}
 	buf := bytes.NewReader(data)
 	err = binary.Read(buf, binary.LittleEndian, &retval)
@@ -595,7 +595,7 @@ func loadmessage(mesg string) IP2Locationrecord {
 	return x
 }
 
-func printErrAndReturnRecord(rec IP2Locationrecord, err error) IP2Locationrecord {
+func handleError(rec IP2Locationrecord, err error) IP2Locationrecord {
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -604,107 +604,107 @@ func printErrAndReturnRecord(rec IP2Locationrecord, err error) IP2Locationrecord
 
 // Get_all will return all geolocation fields based on the queried IP address.
 func Get_all(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, all))
+	return handleError(defaultDB.query( ipaddress, all))
 }
 
 // Get_country_short will return the ISO-3166 country code based on the queried IP address.
 func Get_country_short(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, countryshort))
+	return handleError(defaultDB.query( ipaddress, countryshort))
 }
 
 // Get_country_long will return the country name based on the queried IP address.
 func Get_country_long(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, countrylong))
+	return handleError(defaultDB.query( ipaddress, countrylong))
 }
 
 // Get_region will return the region name based on the queried IP address.
 func Get_region(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, region))
+	return handleError(defaultDB.query( ipaddress, region))
 }
 
 // Get_city will return the city name based on the queried IP address.
 func Get_city(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, city))
+	return handleError(defaultDB.query( ipaddress, city))
 }
 
 // Get_isp will return the Internet Service Provider name based on the queried IP address.
 func Get_isp(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, isp))
+	return handleError(defaultDB.query( ipaddress, isp))
 }
 
 // Get_latitude will return the latitude based on the queried IP address.
 func Get_latitude(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, latitude))
+	return handleError(defaultDB.query( ipaddress, latitude))
 }
 
 // Get_longitude will return the longitude based on the queried IP address.
 func Get_longitude(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, longitude))
+	return handleError(defaultDB.query( ipaddress, longitude))
 }
 
 // Get_domain will return the domain name based on the queried IP address.
 func Get_domain(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, domain))
+	return handleError(defaultDB.query( ipaddress, domain))
 }
 
 // Get_zipcode will return the postal code based on the queried IP address.
 func Get_zipcode(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, zipcode))
+	return handleError(defaultDB.query( ipaddress, zipcode))
 }
 
 // Get_timezone will return the time zone based on the queried IP address.
 func Get_timezone(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, timezone))
+	return handleError(defaultDB.query( ipaddress, timezone))
 }
 
 // Get_netspeed will return the Internet connection speed based on the queried IP address.
 func Get_netspeed(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, netspeed))
+	return handleError(defaultDB.query( ipaddress, netspeed))
 }
 
 // Get_iddcode will return the International Direct Dialing code based on the queried IP address.
 func Get_iddcode(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, iddcode))
+	return handleError(defaultDB.query( ipaddress, iddcode))
 }
 
 // Get_areacode will return the area code based on the queried IP address.
 func Get_areacode(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, areacode))
+	return handleError(defaultDB.query( ipaddress, areacode))
 }
 
 // Get_weatherstationcode will return the weather station code based on the queried IP address.
 func Get_weatherstationcode(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, weatherstationcode))
+	return handleError(defaultDB.query( ipaddress, weatherstationcode))
 }
 
 // Get_weatherstationname will return the weather station name based on the queried IP address.
 func Get_weatherstationname(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, weatherstationname))
+	return handleError(defaultDB.query( ipaddress, weatherstationname))
 }
 
 // Get_mcc will return the mobile country code based on the queried IP address.
 func Get_mcc(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, mcc))
+	return handleError(defaultDB.query( ipaddress, mcc))
 }
 
 // Get_mnc will return the mobile network code based on the queried IP address.
 func Get_mnc(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, mnc))
+	return handleError(defaultDB.query( ipaddress, mnc))
 }
 
 // Get_mobilebrand will return the mobile carrier brand based on the queried IP address.
 func Get_mobilebrand(ipaddress string) IP2Locationrecord  {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, mobilebrand))
+	return handleError(defaultDB.query( ipaddress, mobilebrand))
 }
 
 // Get_elevation will return the elevation in meters based on the queried IP address.
 func Get_elevation(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query( ipaddress, elevation))
+	return handleError(defaultDB.query( ipaddress, elevation))
 }
 
 // Get_usagetype will return the usage type based on the queried IP address.
 func Get_usagetype(ipaddress string) IP2Locationrecord {
-	return printErrAndReturnRecord(defaultDB.query(ipaddress, usagetype))
+	return handleError(defaultDB.query(ipaddress, usagetype))
 }
 
 // Get_all will return all geolocation fields based on the queried IP address.
@@ -910,7 +910,7 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 			row := make([]byte, colsize-firstcol) // exclude the ip from field
 			_, err := d.f.ReadAt(row, int64(rowoffset+firstcol-1))
 			if err != nil {
-				fmt.Println("File read failed:", err)
+				return x, err
 			}
 
 			if mode&countryshort == 1 && d.country_enabled {
