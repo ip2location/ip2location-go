@@ -220,15 +220,15 @@ func (d *DB)checkip(ip string) (iptype uint32, ipnum *big.Int, ipindex uint32) {
 }
 
 // read byte
-func (d *DB)readuint8(pos int64) uint8 {
+func (d *DB)readuint8(pos int64) (uint8, error) {
 	var retval uint8
 	data := make([]byte, 1)
 	_, err := d.f.ReadAt(data, pos-1)
 	if err != nil {
-		fmt.Println("File read failed:", err)
+		return 0, fmt.Errorf("file read failed: %v", err)
 	}
 	retval = data[0]
-	return retval
+	return retval, nil
 }
 
 // read unsigned 32-bit integer from slices
@@ -240,30 +240,30 @@ func (d *DB)readuint32_row(row []byte, pos uint32) uint32 {
 }
 
 // read unsigned 32-bit integer
-func (d *DB)readuint32(pos uint32) uint32 {
+func (d *DB)readuint32(pos uint32) (uint32, error) {
 	pos2 := int64(pos)
 	var retval uint32
 	data := make([]byte, 4)
 	_, err := d.f.ReadAt(data, pos2-1)
 	if err != nil {
-		fmt.Println("File read failed:", err)
+		return 0, fmt.Errorf("file read failed: %v", err)
 	}
 	buf := bytes.NewReader(data)
 	err = binary.Read(buf, binary.LittleEndian, &retval)
 	if err != nil {
-		fmt.Println("Binary read failed:", err)
+		fmt.Printf("binary read failed: %v", err)
 	}
-	return retval
+	return retval, nil
 }
 
 // read unsigned 128-bit integer
-func (d *DB) readuint128(pos uint32) *big.Int {
+func (d *DB) readuint128(pos uint32) (*big.Int, error) {
 	pos2 := int64(pos)
 	retval := big.NewInt(0)
 	data := make([]byte, 16)
 	_, err := d.f.ReadAt(data, pos2-1)
 	if err != nil {
-		fmt.Println("File read failed:", err)
+		return nil, fmt.Errorf("file read failed: %v", err)
 	}
 
 	// little endian to big endian
@@ -271,26 +271,26 @@ func (d *DB) readuint128(pos uint32) *big.Int {
 		data[i], data[j] = data[j], data[i]
 	}
 	retval.SetBytes(data)
-	return retval
+	return retval, nil
 }
 
 // read string
-func (d *DB)readstr(pos uint32) string {
+func (d *DB)readstr(pos uint32) (string, error) {
 	pos2 := int64(pos)
 	var retval string
 	lenbyte := make([]byte, 1)
 	_, err := d.f.ReadAt(lenbyte, pos2)
 	if err != nil {
-		fmt.Println("File read failed:", err)
+		return "", fmt.Errorf("file read failed: %v", err)
 	}
 	strlen := lenbyte[0]
 	data := make([]byte, strlen)
 	_, err = d.f.ReadAt(data, pos2+1)
 	if err != nil {
-		fmt.Println("File read failed:", err)
+		fmt.Printf("file read failed: %v", err)
 	}
 	retval = string(data[:strlen])
-	return retval
+	return retval, nil
 }
 
 // read float from slices
@@ -303,20 +303,25 @@ func (d *DB)readfloat_row(row []byte, pos uint32) float32 {
 }
 
 // read float
-func (d *DB)readfloat(pos uint32) float32 {
+func (d *DB)readfloat(pos uint32) (float32, error) {
 	pos2 := int64(pos)
 	var retval float32
 	data := make([]byte, 4)
 	_, err := d.f.ReadAt(data, pos2-1)
 	if err != nil {
-		fmt.Println("File read failed:", err)
+		return 0, fmt.Errorf("file read failed: %v", err)
 	}
 	buf := bytes.NewReader(data)
 	err = binary.Read(buf, binary.LittleEndian, &retval)
 	if err != nil {
-		fmt.Println("Binary read failed:", err)
+		fmt.Printf("binary read failed: %v", err)
 	}
-	return retval
+	return retval, nil
+}
+
+func fatal(db *DB, err error) (*DB, error) {
+	_ = db.f.Close()
+	return nil, err
 }
 
 // Open takes the path to the IP2Location BIN database file. It will read all the metadata required to
@@ -336,17 +341,50 @@ func OpenDB(dbpath string) (*DB, error) {
 		return nil, err
 	}
 
-	db.meta.databasetype = db.readuint8(1)
-	db.meta.databasecolumn = db.readuint8(2)
-	db.meta.databaseyear = db.readuint8(3)
-	db.meta.databasemonth = db.readuint8(4)
-	db.meta.databaseday = db.readuint8(5)
-	db.meta.ipv4databasecount = db.readuint32(6)
-	db.meta.ipv4databaseaddr = db.readuint32(10)
-	db.meta.ipv6databasecount = db.readuint32(14)
-	db.meta.ipv6databaseaddr = db.readuint32(18)
-	db.meta.ipv4indexbaseaddr = db.readuint32(22)
-	db.meta.ipv6indexbaseaddr = db.readuint32(26)
+	db.meta.databasetype, err = db.readuint8(1)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.databasecolumn, err = db.readuint8(2)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.databaseyear, err = db.readuint8(3)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.databasemonth, err = db.readuint8(4)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.databaseday, err = db.readuint8(5)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.ipv4databasecount, err = db.readuint32(6)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.ipv4databaseaddr, err = db.readuint32(10)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.ipv6databasecount, err = db.readuint32(14)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.ipv6databaseaddr, err = db.readuint32(18)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.ipv4indexbaseaddr, err = db.readuint32(22)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.ipv6indexbaseaddr, err = db.readuint32(26)
+	if err != nil {
+		return fatal(db, err)
+	}
 	db.meta.ipv4columnsize = uint32(db.meta.databasecolumn << 2)              // 4 bytes each column
 	db.meta.ipv6columnsize = uint32(16 + ((db.meta.databasecolumn - 1) << 2)) // 4 bytes each column, except IPFrom column which is 16 bytes
 
@@ -557,224 +595,231 @@ func loadmessage(mesg string) IP2Locationrecord {
 	return x
 }
 
+func printErrAndReturnRecord(rec IP2Locationrecord, err error) IP2Locationrecord {
+	if err != nil {
+		fmt.Print(err)
+	}
+	return rec
+}
+
 // Get_all will return all geolocation fields based on the queried IP address.
 func Get_all(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, all)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, all))
 }
 
 // Get_country_short will return the ISO-3166 country code based on the queried IP address.
 func Get_country_short(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, countryshort)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, countryshort))
 }
 
 // Get_country_long will return the country name based on the queried IP address.
 func Get_country_long(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, countrylong)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, countrylong))
 }
 
 // Get_region will return the region name based on the queried IP address.
 func Get_region(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, region)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, region))
 }
 
 // Get_city will return the city name based on the queried IP address.
 func Get_city(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, city)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, city))
 }
 
 // Get_isp will return the Internet Service Provider name based on the queried IP address.
 func Get_isp(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, isp)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, isp))
 }
 
 // Get_latitude will return the latitude based on the queried IP address.
 func Get_latitude(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, latitude)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, latitude))
 }
 
 // Get_longitude will return the longitude based on the queried IP address.
 func Get_longitude(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, longitude)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, longitude))
 }
 
 // Get_domain will return the domain name based on the queried IP address.
 func Get_domain(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, domain)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, domain))
 }
 
 // Get_zipcode will return the postal code based on the queried IP address.
 func Get_zipcode(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, zipcode)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, zipcode))
 }
 
 // Get_timezone will return the time zone based on the queried IP address.
 func Get_timezone(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, timezone)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, timezone))
 }
 
 // Get_netspeed will return the Internet connection speed based on the queried IP address.
 func Get_netspeed(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, netspeed)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, netspeed))
 }
 
 // Get_iddcode will return the International Direct Dialing code based on the queried IP address.
 func Get_iddcode(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, iddcode)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, iddcode))
 }
 
 // Get_areacode will return the area code based on the queried IP address.
 func Get_areacode(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, areacode)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, areacode))
 }
 
 // Get_weatherstationcode will return the weather station code based on the queried IP address.
 func Get_weatherstationcode(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, weatherstationcode)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, weatherstationcode))
 }
 
 // Get_weatherstationname will return the weather station name based on the queried IP address.
 func Get_weatherstationname(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, weatherstationname)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, weatherstationname))
 }
 
 // Get_mcc will return the mobile country code based on the queried IP address.
 func Get_mcc(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, mcc)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, mcc))
 }
 
 // Get_mnc will return the mobile network code based on the queried IP address.
 func Get_mnc(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, mnc)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, mnc))
 }
 
 // Get_mobilebrand will return the mobile carrier brand based on the queried IP address.
 func Get_mobilebrand(ipaddress string) IP2Locationrecord  {
-	return defaultDB.query( ipaddress, mobilebrand)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, mobilebrand))
 }
 
 // Get_elevation will return the elevation in meters based on the queried IP address.
 func Get_elevation(ipaddress string) IP2Locationrecord {
-	return defaultDB.query( ipaddress, elevation)
+	return printErrAndReturnRecord(defaultDB.query( ipaddress, elevation))
 }
 
 // Get_usagetype will return the usage type based on the queried IP address.
 func Get_usagetype(ipaddress string) IP2Locationrecord {
-	return defaultDB.query(ipaddress, usagetype)
+	return printErrAndReturnRecord(defaultDB.query(ipaddress, usagetype))
 }
 
 // Get_all will return all geolocation fields based on the queried IP address.
-func (d *DB) Get_all(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_all(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, all)
 }
 
 // Get_country_short will return the ISO-3166 country code based on the queried IP address.
-func (d *DB) Get_country_short(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_country_short(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, countryshort)
 }
 
 // Get_country_long will return the country name based on the queried IP address.
-func (d *DB) Get_country_long(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_country_long(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, countrylong)
 }
 
 // Get_region will return the region name based on the queried IP address.
-func (d *DB) Get_region(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_region(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, region)
 }
 
 // Get_city will return the city name based on the queried IP address.
-func (d *DB) Get_city(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_city(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, city)
 }
 
 // Get_isp will return the Internet Service Provider name based on the queried IP address.
-func (d *DB) Get_isp(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_isp(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, isp)
 }
 
 // Get_latitude will return the latitude based on the queried IP address.
-func (d *DB) Get_latitude(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_latitude(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, latitude)
 }
 
 // Get_longitude will return the longitude based on the queried IP address.
-func (d *DB) Get_longitude(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_longitude(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, longitude)
 }
 
 // Get_domain will return the domain name based on the queried IP address.
-func (d *DB) Get_domain(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_domain(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, domain)
 }
 
 // Get_zipcode will return the postal code based on the queried IP address.
-func (d *DB) Get_zipcode(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_zipcode(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, zipcode)
 }
 
 // Get_timezone will return the time zone based on the queried IP address.
-func (d *DB) Get_timezone(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_timezone(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, timezone)
 }
 
 // Get_netspeed will return the Internet connection speed based on the queried IP address.
-func (d *DB) Get_netspeed(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_netspeed(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, netspeed)
 }
 
 // Get_iddcode will return the International Direct Dialing code based on the queried IP address.
-func (d *DB) Get_iddcode(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_iddcode(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, iddcode)
 }
 
 // Get_areacode will return the area code based on the queried IP address.
-func (d *DB) Get_areacode(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_areacode(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, areacode)
 }
 
 // Get_weatherstationcode will return the weather station code based on the queried IP address.
-func (d *DB) Get_weatherstationcode(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_weatherstationcode(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, weatherstationcode)
 }
 
 // Get_weatherstationname will return the weather station name based on the queried IP address.
-func (d *DB) Get_weatherstationname(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_weatherstationname(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, weatherstationname)
 }
 
 // Get_mcc will return the mobile country code based on the queried IP address.
-func (d *DB) Get_mcc(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_mcc(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, mcc)
 }
 
 // Get_mnc will return the mobile network code based on the queried IP address.
-func (d *DB) Get_mnc(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_mnc(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, mnc)
 }
 
 // Get_mobilebrand will return the mobile carrier brand based on the queried IP address.
-func (d *DB) Get_mobilebrand(ipaddress string) IP2Locationrecord  {
+func (d *DB) Get_mobilebrand(ipaddress string) (IP2Locationrecord, error)  {
 	return d.query( ipaddress, mobilebrand)
 }
 
 // Get_elevation will return the elevation in meters based on the queried IP address.
-func (d *DB) Get_elevation(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_elevation(ipaddress string) (IP2Locationrecord, error) {
 	return d.query( ipaddress, elevation)
 }
 
 // Get_usagetype will return the usage type based on the queried IP address.
-func (d *DB) Get_usagetype(ipaddress string) IP2Locationrecord {
+func (d *DB) Get_usagetype(ipaddress string) (IP2Locationrecord, error) {
 	return d.query(ipaddress, usagetype)
 }
 
 // main query
-func (d *DB) query(ipaddress string, mode uint32) IP2Locationrecord {
+func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 	x := loadmessage(not_supported) // default message
 
 	// read metadata
 	if !d.metaok {
 		x = loadmessage(missing_file)
-		return x
+		return x, nil
 	}
 
 	// check IP type and return IP number & index (if exists)
@@ -782,9 +827,10 @@ func (d *DB) query(ipaddress string, mode uint32) IP2Locationrecord {
 
 	if iptype == 0 {
 		x = loadmessage(invalid_address)
-		return x
+		return x, nil
 	}
 
+	var err error
 	var colsize uint32
 	var baseaddr uint32
 	var low uint32
@@ -810,8 +856,14 @@ func (d *DB) query(ipaddress string, mode uint32) IP2Locationrecord {
 
 	// reading index
 	if ipindex > 0 {
-		low = d.readuint32(ipindex)
-		high = d.readuint32(ipindex + 4)
+		low, err = d.readuint32(ipindex)
+		if err != nil {
+			return x, err
+		}
+		high, err = d.readuint32(ipindex + 4)
+		if err != nil {
+			return x, err
+		}
 	}
 
 	if ipno.Cmp(maxip) >= 0 {
@@ -824,11 +876,28 @@ func (d *DB) query(ipaddress string, mode uint32) IP2Locationrecord {
 		rowoffset2 = rowoffset + colsize
 
 		if iptype == 4 {
-			ipfrom = big.NewInt(int64(d.readuint32(rowoffset)))
-			ipto = big.NewInt(int64(d.readuint32(rowoffset2)))
+			ipfrom32, err := d.readuint32(rowoffset)
+			if err != nil {
+				return x, err
+			}
+			ipfrom = big.NewInt(int64(ipfrom32))
+
+			ipto32, err := d.readuint32(rowoffset2)
+			if err != nil {
+				return x, err
+			}
+			ipto = big.NewInt(int64(ipto32))
+
 		} else {
-			ipfrom = d.readuint128(rowoffset)
-			ipto = d.readuint128(rowoffset2)
+			ipfrom, err = d.readuint128(rowoffset)
+			if err != nil {
+				return x, err
+			}
+
+			ipto, err = d.readuint128(rowoffset2)
+			if err != nil {
+				return x, err
+			}
 		}
 
 		if ipno.Cmp(ipfrom) >= 0 && ipno.Cmp(ipto) < 0 {
@@ -846,27 +915,37 @@ func (d *DB) query(ipaddress string, mode uint32) IP2Locationrecord {
 
 			if mode&countryshort == 1 && d.country_enabled {
 				// x.Country_short = readstr(readuint32(rowoffset + country_position_offset))
-				x.Country_short = d.readstr(d.readuint32_row(row, d.country_position_offset))
+				if x.Country_short, err = d.readstr(d.readuint32_row(row, d.country_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&countrylong != 0 && d.country_enabled {
 				// x.Country_long = readstr(readuint32(rowoffset + country_position_offset) + 3)
-				x.Country_long = d.readstr(d.readuint32_row(row, d.country_position_offset) + 3)
+				if x.Country_long, err = d.readstr(d.readuint32_row(row, d.country_position_offset) + 3); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&region != 0 && d.region_enabled {
 				// x.Region = readstr(readuint32(rowoffset + region_position_offset))
-				x.Region = d.readstr(d.readuint32_row(row, d.region_position_offset))
+				if x.Region, err = d.readstr(d.readuint32_row(row, d.region_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&city != 0 && d.city_enabled {
 				// x.City = readstr(readuint32(rowoffset + city_position_offset))
-				x.City = d.readstr(d.readuint32_row(row, d.city_position_offset))
+				if x.City, err = d.readstr(d.readuint32_row(row, d.city_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&isp != 0 && d.isp_enabled {
 				// x.Isp = readstr(readuint32(rowoffset + isp_position_offset))
-				x.Isp = d.readstr(d.readuint32_row(row, d.isp_position_offset))
+				if x.Isp, err = d.readstr(d.readuint32_row(row, d.isp_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&latitude != 0 && d.latitude_enabled {
@@ -881,71 +960,100 @@ func (d *DB) query(ipaddress string, mode uint32) IP2Locationrecord {
 
 			if mode&domain != 0 && d.domain_enabled {
 				// x.Domain = readstr(readuint32(rowoffset + domain_position_offset))
-				x.Domain = d.readstr(d.readuint32_row(row, d.domain_position_offset))
+				if x.Domain, err = d.readstr(d.readuint32_row(row, d.domain_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&zipcode != 0 && d.zipcode_enabled {
 				// x.Zipcode = readstr(readuint32(rowoffset + zipcode_position_offset))
-				x.Zipcode = d.readstr(d.readuint32_row(row, d.zipcode_position_offset))
+				if x.Zipcode, err = d.readstr(d.readuint32_row(row, d.zipcode_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&timezone != 0 && d.timezone_enabled {
 				// x.Timezone = readstr(readuint32(rowoffset + timezone_position_offset))
-				x.Timezone = d.readstr(d.readuint32_row(row, d.timezone_position_offset))
+				if x.Timezone, err = d.readstr(d.readuint32_row(row, d.timezone_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&netspeed != 0 && d.netspeed_enabled {
 				// x.Netspeed = readstr(readuint32(rowoffset + netspeed_position_offset))
-				x.Netspeed = d.readstr(d.readuint32_row(row, d.netspeed_position_offset))
+				if x.Netspeed, err = d.readstr(d.readuint32_row(row, d.netspeed_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&iddcode != 0 && d.iddcode_enabled {
 				// x.Iddcode = readstr(readuint32(rowoffset + iddcode_position_offset))
-				x.Iddcode = d.readstr(d.readuint32_row(row, d.iddcode_position_offset))
+				if x.Iddcode, err = d.readstr(d.readuint32_row(row, d.iddcode_position_offset));  err != nil {
+					return x, err
+				}
 			}
 
 			if mode&areacode != 0 && d.areacode_enabled {
 				// x.Areacode = readstr(readuint32(rowoffset + areacode_position_offset))
-				x.Areacode = d.readstr(d.readuint32_row(row, d.areacode_position_offset))
+				if x.Areacode, err = d.readstr(d.readuint32_row(row, d.areacode_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&weatherstationcode != 0 && d.weatherstationcode_enabled {
 				// x.Weatherstationcode = readstr(readuint32(rowoffset + weatherstationcode_position_offset))
-				x.Weatherstationcode = d.readstr(d.readuint32_row(row, d.weatherstationcode_position_offset))
+				if x.Weatherstationcode, err = d.readstr(d.readuint32_row(row, d.weatherstationcode_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&weatherstationname != 0 && d.weatherstationname_enabled {
 				// x.Weatherstationname = readstr(readuint32(rowoffset + weatherstationname_position_offset))
-				x.Weatherstationname = d.readstr(d.readuint32_row(row, d.weatherstationname_position_offset))
+				if x.Weatherstationname, err = d.readstr(d.readuint32_row(row, d.weatherstationname_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&mcc != 0 && d.mcc_enabled {
 				// x.Mcc = readstr(readuint32(rowoffset + mcc_position_offset))
-				x.Mcc = d.readstr(d.readuint32_row(row, d.mcc_position_offset))
+				if x.Mcc, err = d.readstr(d.readuint32_row(row, d.mcc_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&mnc != 0 && d.mnc_enabled {
 				// x.Mnc = readstr(readuint32(rowoffset + mnc_position_offset))
-				x.Mnc = d.readstr(d.readuint32_row(row, d.mnc_position_offset))
+				if x.Mnc, err = d.readstr(d.readuint32_row(row, d.mnc_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&mobilebrand != 0 && d.mobilebrand_enabled {
 				// x.Mobilebrand = readstr(readuint32(rowoffset + mobilebrand_position_offset))
-				x.Mobilebrand = d.readstr(d.readuint32_row(row, d.mobilebrand_position_offset))
+				if x.Mobilebrand, err = d.readstr(d.readuint32_row(row, d.mobilebrand_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
 			if mode&elevation != 0 && d.elevation_enabled {
 				// f, _ := strconv.ParseFloat(readstr(readuint32(rowoffset + elevation_position_offset)), 32)
-				f, _ := strconv.ParseFloat(d.readstr(d.readuint32_row(row, d.elevation_position_offset)), 32)
+				res, err := d.readstr(d.readuint32_row(row, d.elevation_position_offset))
+				if err != nil {
+					return x, err
+				}
+
+				f, _ := strconv.ParseFloat(res, 32)
 				x.Elevation = float32(f)
 			}
 
 			if mode&usagetype != 0 && d.usagetype_enabled {
 				// x.Usagetype = readstr(readuint32(rowoffset + usagetype_position_offset))
-				x.Usagetype = d.readstr(d.readuint32_row(row, d.usagetype_position_offset))
+				if x.Usagetype, err = d.readstr(d.readuint32_row(row, d.usagetype_position_offset)); err != nil {
+					return x, err
+				}
 			}
 
-			return x
+			return x, nil
 		} else {
 			if ipno.Cmp(ipfrom) < 0 {
 				high = mid - 1
@@ -954,7 +1062,7 @@ func (d *DB) query(ipaddress string, mode uint32) IP2Locationrecord {
 			}
 		}
 	}
-	return x
+	return x, nil
 }
 
 func (d *DB) Close() {
