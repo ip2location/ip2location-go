@@ -40,10 +40,18 @@ import (
 )
 
 func main() {
-	ip2location.Open("./IPV6-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE-TIMEZONE-ISP-DOMAIN-NETSPEED-AREACODE-WEATHER-MOBILE-ELEVATION-USAGETYPE.BIN")
-	ip := "8.8.8.8"
+	db, err := ip2location.OpenDB("./IP-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE-TIMEZONE-ISP-DOMAIN-NETSPEED-AREACODE-WEATHER-MOBILE-ELEVATION-USAGETYPE.BIN")
 	
-	results := ip2location.Get_all(ip)
+	if err != nil {
+		return
+	}
+	ip := "8.8.8.8"
+	results, err := db.Get_all(ip)
+	
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
 	
 	fmt.Printf("country_short: %s\n", results.Country_short)
 	fmt.Printf("country_long: %s\n", results.Country_long)
@@ -67,7 +75,7 @@ func main() {
 	fmt.Printf("usagetype: %s\n", results.Usagetype)
 	fmt.Printf("api version: %s\n", ip2location.Api_version())
 	
-	ip2location.Close()
+	db.Close()
 }
 ```
 
@@ -87,4 +95,4 @@ Use the IPv6 BIN file if you need to query BOTH IPv4 and IPv6 addresses.
 Copyright
 =========
 
-Copyright (C) 2019 by IP2Location.com, support@ip2location.com
+Copyright (C) 2020 by IP2Location.com, support@ip2location.com

@@ -56,52 +56,51 @@ type IP2Locationrecord struct {
 }
 
 type DB struct {
-	f *os.File
+	f    *os.File
 	meta ip2locationmeta
 
-	country_position_offset uint32
-	region_position_offset uint32
-	city_position_offset uint32
-	isp_position_offset uint32
-	domain_position_offset uint32
-	zipcode_position_offset uint32
-	latitude_position_offset uint32
-	longitude_position_offset uint32
-	timezone_position_offset uint32
-	netspeed_position_offset uint32
-	iddcode_position_offset uint32
-	areacode_position_offset uint32
+	country_position_offset            uint32
+	region_position_offset             uint32
+	city_position_offset               uint32
+	isp_position_offset                uint32
+	domain_position_offset             uint32
+	zipcode_position_offset            uint32
+	latitude_position_offset           uint32
+	longitude_position_offset          uint32
+	timezone_position_offset           uint32
+	netspeed_position_offset           uint32
+	iddcode_position_offset            uint32
+	areacode_position_offset           uint32
 	weatherstationcode_position_offset uint32
 	weatherstationname_position_offset uint32
-	mcc_position_offset uint32
-	mnc_position_offset uint32
-	mobilebrand_position_offset uint32
-	elevation_position_offset uint32
-	usagetype_position_offset uint32
+	mcc_position_offset                uint32
+	mnc_position_offset                uint32
+	mobilebrand_position_offset        uint32
+	elevation_position_offset          uint32
+	usagetype_position_offset          uint32
 
-	country_enabled bool
-	region_enabled bool
-	city_enabled bool
-	isp_enabled bool
-	domain_enabled bool
-	zipcode_enabled bool
-	latitude_enabled bool
-	longitude_enabled bool
-	timezone_enabled bool
-	netspeed_enabled bool
-	iddcode_enabled bool
-	areacode_enabled bool
+	country_enabled            bool
+	region_enabled             bool
+	city_enabled               bool
+	isp_enabled                bool
+	domain_enabled             bool
+	zipcode_enabled            bool
+	latitude_enabled           bool
+	longitude_enabled          bool
+	timezone_enabled           bool
+	netspeed_enabled           bool
+	iddcode_enabled            bool
+	areacode_enabled           bool
 	weatherstationcode_enabled bool
 	weatherstationname_enabled bool
-	mcc_enabled bool
-	mnc_enabled bool
-	mobilebrand_enabled bool
-	elevation_enabled bool
-	usagetype_enabled bool
+	mcc_enabled                bool
+	mnc_enabled                bool
+	mobilebrand_enabled        bool
+	elevation_enabled          bool
+	usagetype_enabled          bool
 
 	metaok bool
 }
-
 
 var defaultDB = &DB{}
 
@@ -125,7 +124,7 @@ var mobilebrand_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 var elevation_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 19, 0, 19}
 var usagetype_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 20}
 
-const api_version string = "8.2.0"
+const api_version string = "8.3.0"
 
 var max_ipv4_range = big.NewInt(4294967295)
 var max_ipv6_range = big.NewInt(0)
@@ -165,7 +164,7 @@ const missing_file string = "Invalid database file."
 const not_supported string = "This parameter is unavailable for selected data file. Please upgrade the data file."
 
 // get IP type and calculate IP number; calculates index too if exists
-func (d *DB)checkip(ip string) (iptype uint32, ipnum *big.Int, ipindex uint32) {
+func (d *DB) checkip(ip string) (iptype uint32, ipnum *big.Int, ipindex uint32) {
 	iptype = 0
 	ipnum = big.NewInt(0)
 	ipnumtmp := big.NewInt(0)
@@ -220,7 +219,7 @@ func (d *DB)checkip(ip string) (iptype uint32, ipnum *big.Int, ipindex uint32) {
 }
 
 // read byte
-func (d *DB)readuint8(pos int64) (uint8, error) {
+func (d *DB) readuint8(pos int64) (uint8, error) {
 	var retval uint8
 	data := make([]byte, 1)
 	_, err := d.f.ReadAt(data, pos-1)
@@ -232,7 +231,7 @@ func (d *DB)readuint8(pos int64) (uint8, error) {
 }
 
 // read unsigned 32-bit integer from slices
-func (d *DB)readuint32_row(row []byte, pos uint32) uint32 {
+func (d *DB) readuint32_row(row []byte, pos uint32) uint32 {
 	var retval uint32
 	data := row[pos : pos+4]
 	retval = binary.LittleEndian.Uint32(data)
@@ -240,7 +239,7 @@ func (d *DB)readuint32_row(row []byte, pos uint32) uint32 {
 }
 
 // read unsigned 32-bit integer
-func (d *DB)readuint32(pos uint32) (uint32, error) {
+func (d *DB) readuint32(pos uint32) (uint32, error) {
 	pos2 := int64(pos)
 	var retval uint32
 	data := make([]byte, 4)
@@ -275,7 +274,7 @@ func (d *DB) readuint128(pos uint32) (*big.Int, error) {
 }
 
 // read string
-func (d *DB)readstr(pos uint32) (string, error) {
+func (d *DB) readstr(pos uint32) (string, error) {
 	pos2 := int64(pos)
 	var retval string
 	lenbyte := make([]byte, 1)
@@ -294,7 +293,7 @@ func (d *DB)readstr(pos uint32) (string, error) {
 }
 
 // read float from slices
-func (d *DB)readfloat_row(row []byte, pos uint32) float32 {
+func (d *DB) readfloat_row(row []byte, pos uint32) float32 {
 	var retval float32
 	data := row[pos : pos+4]
 	bits := binary.LittleEndian.Uint32(data)
@@ -303,7 +302,7 @@ func (d *DB)readfloat_row(row []byte, pos uint32) float32 {
 }
 
 // read float
-func (d *DB)readfloat(pos uint32) (float32, error) {
+func (d *DB) readfloat(pos uint32) (float32, error) {
 	pos2 := int64(pos)
 	var retval float32
 	data := make([]byte, 4)
@@ -604,102 +603,102 @@ func handleError(rec IP2Locationrecord, err error) IP2Locationrecord {
 
 // Get_all will return all geolocation fields based on the queried IP address.
 func Get_all(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, all))
+	return handleError(defaultDB.query(ipaddress, all))
 }
 
 // Get_country_short will return the ISO-3166 country code based on the queried IP address.
 func Get_country_short(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, countryshort))
+	return handleError(defaultDB.query(ipaddress, countryshort))
 }
 
 // Get_country_long will return the country name based on the queried IP address.
 func Get_country_long(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, countrylong))
+	return handleError(defaultDB.query(ipaddress, countrylong))
 }
 
 // Get_region will return the region name based on the queried IP address.
 func Get_region(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, region))
+	return handleError(defaultDB.query(ipaddress, region))
 }
 
 // Get_city will return the city name based on the queried IP address.
 func Get_city(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, city))
+	return handleError(defaultDB.query(ipaddress, city))
 }
 
 // Get_isp will return the Internet Service Provider name based on the queried IP address.
 func Get_isp(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, isp))
+	return handleError(defaultDB.query(ipaddress, isp))
 }
 
 // Get_latitude will return the latitude based on the queried IP address.
 func Get_latitude(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, latitude))
+	return handleError(defaultDB.query(ipaddress, latitude))
 }
 
 // Get_longitude will return the longitude based on the queried IP address.
 func Get_longitude(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, longitude))
+	return handleError(defaultDB.query(ipaddress, longitude))
 }
 
 // Get_domain will return the domain name based on the queried IP address.
 func Get_domain(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, domain))
+	return handleError(defaultDB.query(ipaddress, domain))
 }
 
 // Get_zipcode will return the postal code based on the queried IP address.
 func Get_zipcode(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, zipcode))
+	return handleError(defaultDB.query(ipaddress, zipcode))
 }
 
 // Get_timezone will return the time zone based on the queried IP address.
 func Get_timezone(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, timezone))
+	return handleError(defaultDB.query(ipaddress, timezone))
 }
 
 // Get_netspeed will return the Internet connection speed based on the queried IP address.
 func Get_netspeed(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, netspeed))
+	return handleError(defaultDB.query(ipaddress, netspeed))
 }
 
 // Get_iddcode will return the International Direct Dialing code based on the queried IP address.
 func Get_iddcode(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, iddcode))
+	return handleError(defaultDB.query(ipaddress, iddcode))
 }
 
 // Get_areacode will return the area code based on the queried IP address.
 func Get_areacode(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, areacode))
+	return handleError(defaultDB.query(ipaddress, areacode))
 }
 
 // Get_weatherstationcode will return the weather station code based on the queried IP address.
 func Get_weatherstationcode(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, weatherstationcode))
+	return handleError(defaultDB.query(ipaddress, weatherstationcode))
 }
 
 // Get_weatherstationname will return the weather station name based on the queried IP address.
 func Get_weatherstationname(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, weatherstationname))
+	return handleError(defaultDB.query(ipaddress, weatherstationname))
 }
 
 // Get_mcc will return the mobile country code based on the queried IP address.
 func Get_mcc(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, mcc))
+	return handleError(defaultDB.query(ipaddress, mcc))
 }
 
 // Get_mnc will return the mobile network code based on the queried IP address.
 func Get_mnc(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, mnc))
+	return handleError(defaultDB.query(ipaddress, mnc))
 }
 
 // Get_mobilebrand will return the mobile carrier brand based on the queried IP address.
-func Get_mobilebrand(ipaddress string) IP2Locationrecord  {
-	return handleError(defaultDB.query( ipaddress, mobilebrand))
+func Get_mobilebrand(ipaddress string) IP2Locationrecord {
+	return handleError(defaultDB.query(ipaddress, mobilebrand))
 }
 
 // Get_elevation will return the elevation in meters based on the queried IP address.
 func Get_elevation(ipaddress string) IP2Locationrecord {
-	return handleError(defaultDB.query( ipaddress, elevation))
+	return handleError(defaultDB.query(ipaddress, elevation))
 }
 
 // Get_usagetype will return the usage type based on the queried IP address.
@@ -709,102 +708,102 @@ func Get_usagetype(ipaddress string) IP2Locationrecord {
 
 // Get_all will return all geolocation fields based on the queried IP address.
 func (d *DB) Get_all(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, all)
+	return d.query(ipaddress, all)
 }
 
 // Get_country_short will return the ISO-3166 country code based on the queried IP address.
 func (d *DB) Get_country_short(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, countryshort)
+	return d.query(ipaddress, countryshort)
 }
 
 // Get_country_long will return the country name based on the queried IP address.
 func (d *DB) Get_country_long(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, countrylong)
+	return d.query(ipaddress, countrylong)
 }
 
 // Get_region will return the region name based on the queried IP address.
 func (d *DB) Get_region(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, region)
+	return d.query(ipaddress, region)
 }
 
 // Get_city will return the city name based on the queried IP address.
 func (d *DB) Get_city(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, city)
+	return d.query(ipaddress, city)
 }
 
 // Get_isp will return the Internet Service Provider name based on the queried IP address.
 func (d *DB) Get_isp(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, isp)
+	return d.query(ipaddress, isp)
 }
 
 // Get_latitude will return the latitude based on the queried IP address.
 func (d *DB) Get_latitude(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, latitude)
+	return d.query(ipaddress, latitude)
 }
 
 // Get_longitude will return the longitude based on the queried IP address.
 func (d *DB) Get_longitude(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, longitude)
+	return d.query(ipaddress, longitude)
 }
 
 // Get_domain will return the domain name based on the queried IP address.
 func (d *DB) Get_domain(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, domain)
+	return d.query(ipaddress, domain)
 }
 
 // Get_zipcode will return the postal code based on the queried IP address.
 func (d *DB) Get_zipcode(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, zipcode)
+	return d.query(ipaddress, zipcode)
 }
 
 // Get_timezone will return the time zone based on the queried IP address.
 func (d *DB) Get_timezone(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, timezone)
+	return d.query(ipaddress, timezone)
 }
 
 // Get_netspeed will return the Internet connection speed based on the queried IP address.
 func (d *DB) Get_netspeed(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, netspeed)
+	return d.query(ipaddress, netspeed)
 }
 
 // Get_iddcode will return the International Direct Dialing code based on the queried IP address.
 func (d *DB) Get_iddcode(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, iddcode)
+	return d.query(ipaddress, iddcode)
 }
 
 // Get_areacode will return the area code based on the queried IP address.
 func (d *DB) Get_areacode(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, areacode)
+	return d.query(ipaddress, areacode)
 }
 
 // Get_weatherstationcode will return the weather station code based on the queried IP address.
 func (d *DB) Get_weatherstationcode(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, weatherstationcode)
+	return d.query(ipaddress, weatherstationcode)
 }
 
 // Get_weatherstationname will return the weather station name based on the queried IP address.
 func (d *DB) Get_weatherstationname(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, weatherstationname)
+	return d.query(ipaddress, weatherstationname)
 }
 
 // Get_mcc will return the mobile country code based on the queried IP address.
 func (d *DB) Get_mcc(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, mcc)
+	return d.query(ipaddress, mcc)
 }
 
 // Get_mnc will return the mobile network code based on the queried IP address.
 func (d *DB) Get_mnc(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, mnc)
+	return d.query(ipaddress, mnc)
 }
 
 // Get_mobilebrand will return the mobile carrier brand based on the queried IP address.
-func (d *DB) Get_mobilebrand(ipaddress string) (IP2Locationrecord, error)  {
-	return d.query( ipaddress, mobilebrand)
+func (d *DB) Get_mobilebrand(ipaddress string) (IP2Locationrecord, error) {
+	return d.query(ipaddress, mobilebrand)
 }
 
 // Get_elevation will return the elevation in meters based on the queried IP address.
 func (d *DB) Get_elevation(ipaddress string) (IP2Locationrecord, error) {
-	return d.query( ipaddress, elevation)
+	return d.query(ipaddress, elevation)
 }
 
 // Get_usagetype will return the usage type based on the queried IP address.
@@ -988,7 +987,7 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 
 			if mode&iddcode != 0 && d.iddcode_enabled {
 				// x.Iddcode = readstr(readuint32(rowoffset + iddcode_position_offset))
-				if x.Iddcode, err = d.readstr(d.readuint32_row(row, d.iddcode_position_offset));  err != nil {
+				if x.Iddcode, err = d.readstr(d.readuint32_row(row, d.iddcode_position_offset)); err != nil {
 					return x, err
 				}
 			}
