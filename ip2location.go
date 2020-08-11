@@ -326,6 +326,17 @@ func fatal(db *DB, err error) (*DB, error) {
 // Open takes the path to the IP2Location BIN database file. It will read all the metadata required to
 // be able to extract the embedded geolocation data, and return the underlining DB object.
 func OpenDB(dbpath string) (*DB, error) {
+	f, err := os.Open(dbpath)
+	if err != nil {
+		return nil, err
+	}
+
+	return OpenDBWithFile(f)
+}
+
+// Open takes an *os.File to the IP2Location BIN database file. It will read all the metadata required to
+// be able to extract the embedded geolocation data, and return the underlining DB object.
+func OpenDBWithFile(file *os.File) (*DB, error) {
 	var db = &DB{}
 
 	max_ipv6_range.SetString("340282366920938463463374607431768211455", 10)
@@ -334,12 +345,9 @@ func OpenDB(dbpath string) (*DB, error) {
 	from_teredo.SetString("42540488161975842760550356425300246528", 10)
 	to_teredo.SetString("42540488241204005274814694018844196863", 10)
 
-	var err error
-	db.f, err = os.Open(dbpath)
-	if err != nil {
-		return nil, err
-	}
+	db.f = file
 
+	var err error
 	db.meta.databasetype, err = db.readuint8(1)
 	if err != nil {
 		return fatal(db, err)
