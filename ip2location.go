@@ -7,12 +7,18 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"math"
 	"math/big"
 	"net"
 	"os"
 	"strconv"
 )
+
+type DBReader interface {
+	io.ReadCloser
+	io.ReaderAt
+}
 
 type ip2locationmeta struct {
 	databasetype      uint8
@@ -56,7 +62,7 @@ type IP2Locationrecord struct {
 }
 
 type DB struct {
-	f    *os.File
+	f    DBReader
 	meta ip2locationmeta
 
 	country_position_offset            uint32
@@ -331,12 +337,12 @@ func OpenDB(dbpath string) (*DB, error) {
 		return nil, err
 	}
 
-	return OpenDBWithFile(f)
+	return OpenDBWithReader(f)
 }
 
-// Open takes an *os.File to the IP2Location BIN database file. It will read all the metadata required to
+// OpenDBWithReader takes a DBReader to the IP2Location BIN database file. It will read all the metadata required to
 // be able to extract the embedded geolocation data, and return the underlining DB object.
-func OpenDBWithFile(file *os.File) (*DB, error) {
+func OpenDBWithReader(reader DBReader) (*DB, error) {
 	var db = &DB{}
 
 	max_ipv6_range.SetString("340282366920938463463374607431768211455", 10)
@@ -345,7 +351,7 @@ func OpenDBWithFile(file *os.File) (*DB, error) {
 	from_teredo.SetString("42540488161975842760550356425300246528", 10)
 	to_teredo.SetString("42540488241204005274814694018844196863", 10)
 
-	db.f = file
+	db.f = reader
 
 	var err error
 	db.meta.databasetype, err = db.readuint8(1)
