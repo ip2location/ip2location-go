@@ -25,7 +25,7 @@ Installation
 =======
 
 ```
-go get github.com/ip2location/ip2location-go
+go get github.com/ip2location/ip2location-go/v10
 ```
 
 Example
@@ -46,34 +46,34 @@ func main() {
 		return
 	}
 	ip := "8.8.8.8"
-	results, err := db.Get_all(ip)
+	results, err := db.GetAll(ip)
 	
 	if err != nil {
 		fmt.Print(err)
 		return
 	}
 	
-	fmt.Printf("country_short: %s\n", results.Country_short)
-	fmt.Printf("country_long: %s\n", results.Country_long)
+	fmt.Printf("country_short: %s\n", results.CountryShort)
+	fmt.Printf("country_long: %s\n", results.CountryLong)
 	fmt.Printf("region: %s\n", results.Region)
 	fmt.Printf("city: %s\n", results.City)
-	fmt.Printf("isp: %s\n", results.Isp)
+	fmt.Printf("isp: %s\n", results.ISP)
 	fmt.Printf("latitude: %f\n", results.Latitude)
 	fmt.Printf("longitude: %f\n", results.Longitude)
 	fmt.Printf("domain: %s\n", results.Domain)
 	fmt.Printf("zipcode: %s\n", results.Zipcode)
 	fmt.Printf("timezone: %s\n", results.Timezone)
-	fmt.Printf("netspeed: %s\n", results.Netspeed)
-	fmt.Printf("iddcode: %s\n", results.Iddcode)
-	fmt.Printf("areacode: %s\n", results.Areacode)
-	fmt.Printf("weatherstationcode: %s\n", results.Weatherstationcode)
-	fmt.Printf("weatherstationname: %s\n", results.Weatherstationname)
-	fmt.Printf("mcc: %s\n", results.Mcc)
-	fmt.Printf("mnc: %s\n", results.Mnc)
-	fmt.Printf("mobilebrand: %s\n", results.Mobilebrand)
+	fmt.Printf("netspeed: %s\n", results.NetSpeed)
+	fmt.Printf("iddcode: %s\n", results.IDDCode)
+	fmt.Printf("areacode: %s\n", results.AreaCode)
+	fmt.Printf("weatherstationcode: %s\n", results.WeatherStationCode)
+	fmt.Printf("weatherstationname: %s\n", results.WeatherStationName)
+	fmt.Printf("mcc: %s\n", results.MCC)
+	fmt.Printf("mnc: %s\n", results.MNC)
+	fmt.Printf("mobilebrand: %s\n", results.MobileBrand)
 	fmt.Printf("elevation: %f\n", results.Elevation)
-	fmt.Printf("usagetype: %s\n", results.Usagetype)
-	fmt.Printf("api version: %s\n", ip2location.Api_version())
+	fmt.Printf("usagetype: %s\n", results.UsageType)
+	fmt.Printf("api version: %s\n", ip2location.ApiVersion())
 	
 	db.Close()
 }
