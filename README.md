@@ -4,7 +4,7 @@
 IP2Location Go Package
 ======================
 
-This Go package provides a fast lookup of country, region, city, latitude, longitude, ZIP code, time zone, ISP, domain name, connection type, IDD code, area code, weather station code, station name, mcc, mnc, mobile brand, elevation, and usage type from IP address by using IP2Location database. This package uses a file based database available at IP2Location.com. This database simply contains IP blocks as keys, and other information such as country, region, city, latitude, longitude, ZIP code, time zone, ISP, domain name, connection type, IDD code, area code, weather station code, station name, mcc, mnc, mobile brand, elevation, and usage type as values. It supports both IP address in IPv4 and IPv6.
+This Go package provides a fast lookup of country, region, city, latitude, longitude, ZIP code, time zone, ISP, domain name, connection type, IDD code, area code, weather station code, station name, mcc, mnc, mobile brand, elevation, and usage type from IP address by using IP2Location database. This package uses a file based database available at IP2Location.com. This database simply contains IP blocks as keys, and other information such as country, region, city, latitude, longitude, ZIP code, time zone, ISP, domain name, connection type, IDD code, area code, weather station code, station name, mcc, mnc, mobile brand, elevation, usage type, address type and IAB category as values. It supports both IP address in IPv4 and IPv6.
 
 This package can be used in many types of projects such as:
 
@@ -40,9 +40,10 @@ import (
 )
 
 func main() {
-	db, err := ip2location.OpenDB("./IP-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE-TIMEZONE-ISP-DOMAIN-NETSPEED-AREACODE-WEATHER-MOBILE-ELEVATION-USAGETYPE.BIN")
+	db, err := ip2location.OpenDB("./IP-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE-TIMEZONE-ISP-DOMAIN-NETSPEED-AREACODE-WEATHER-MOBILE-ELEVATION-USAGETYPE-ADDRESSTYPE-CATEGORY.BIN")
 	
 	if err != nil {
+		fmt.Print(err)
 		return
 	}
 	ip := "8.8.8.8"
@@ -73,6 +74,8 @@ func main() {
 	fmt.Printf("mobilebrand: %s\n", results.Mobilebrand)
 	fmt.Printf("elevation: %f\n", results.Elevation)
 	fmt.Printf("usagetype: %s\n", results.Usagetype)
+	fmt.Printf("addresstype: %s\n", results.Addresstype)
+	fmt.Printf("category: %s\n", results.Category)
 	fmt.Printf("api version: %s\n", ip2location.Api_version())
 	
 	db.Close()
@@ -95,4 +98,4 @@ Use the IPv6 BIN file if you need to query BOTH IPv4 and IPv6 addresses.
 Copyright
 =========
 
-Copyright (C) 2020 by IP2Location.com, support@ip2location.com
+Copyright (C) 2021 by IP2Location.com, support@ip2location.com

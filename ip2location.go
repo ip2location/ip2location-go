@@ -1,11 +1,12 @@
 // This ip2location package provides a fast lookup of country, region, city, latitude, longitude, ZIP code, time zone,
 // ISP, domain name, connection type, IDD code, area code, weather station code, station name, MCC, MNC,
-// mobile brand, elevation, and usage type from IP address by using IP2Location database.
+// mobile brand, elevation, usage type, address type and IAB category from IP address by using IP2Location database.
 package ip2location
 
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -34,6 +35,9 @@ type ip2locationmeta struct {
 	ipv6indexbaseaddr uint32
 	ipv4columnsize    uint32
 	ipv6columnsize    uint32
+	productcode       uint8
+	producttype       uint8
+	filesize          uint32
 }
 
 // The IP2Locationrecord struct stores all of the available
@@ -59,6 +63,8 @@ type IP2Locationrecord struct {
 	Mobilebrand        string
 	Elevation          float32
 	Usagetype          string
+	Addresstype        string
+	Category           string
 }
 
 type DB struct {
@@ -84,6 +90,8 @@ type DB struct {
 	mobilebrand_position_offset        uint32
 	elevation_position_offset          uint32
 	usagetype_position_offset          uint32
+	addresstype_position_offset        uint32
+	category_position_offset           uint32
 
 	country_enabled            bool
 	region_enabled             bool
@@ -104,33 +112,37 @@ type DB struct {
 	mobilebrand_enabled        bool
 	elevation_enabled          bool
 	usagetype_enabled          bool
+	addresstype_enabled        bool
+	category_enabled           bool
 
 	metaok bool
 }
 
 var defaultDB = &DB{}
 
-var country_position = [25]uint8{0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
-var region_position = [25]uint8{0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}
-var city_position = [25]uint8{0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4}
-var isp_position = [25]uint8{0, 0, 3, 0, 5, 0, 7, 5, 7, 0, 8, 0, 9, 0, 9, 0, 9, 0, 9, 7, 9, 0, 9, 7, 9}
-var latitude_position = [25]uint8{0, 0, 0, 0, 0, 5, 5, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5}
-var longitude_position = [25]uint8{0, 0, 0, 0, 0, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6}
-var domain_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 6, 8, 0, 9, 0, 10, 0, 10, 0, 10, 0, 10, 8, 10, 0, 10, 8, 10}
-var zipcode_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 7, 0, 7, 7, 7, 0, 7, 0, 7, 7, 7, 0, 7}
-var timezone_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 7, 8, 8, 8, 7, 8, 0, 8, 8, 8, 0, 8}
-var netspeed_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 11, 0, 11, 8, 11, 0, 11, 0, 11, 0, 11}
-var iddcode_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 12, 0, 12, 0, 12, 9, 12, 0, 12}
-var areacode_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 13, 0, 13, 0, 13, 10, 13, 0, 13}
-var weatherstationcode_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 14, 0, 14, 0, 14, 0, 14}
-var weatherstationname_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 15, 0, 15, 0, 15, 0, 15}
-var mcc_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 16, 0, 16, 9, 16}
-var mnc_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 17, 0, 17, 10, 17}
-var mobilebrand_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 18, 0, 18, 11, 18}
-var elevation_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 19, 0, 19}
-var usagetype_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 20}
+var country_position = [26]uint8{0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
+var region_position = [26]uint8{0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}
+var city_position = [26]uint8{0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4}
+var isp_position = [26]uint8{0, 0, 3, 0, 5, 0, 7, 5, 7, 0, 8, 0, 9, 0, 9, 0, 9, 0, 9, 7, 9, 0, 9, 7, 9, 9}
+var latitude_position = [26]uint8{0, 0, 0, 0, 0, 5, 5, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5}
+var longitude_position = [26]uint8{0, 0, 0, 0, 0, 6, 6, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6}
+var domain_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 6, 8, 0, 9, 0, 10, 0, 10, 0, 10, 0, 10, 8, 10, 0, 10, 8, 10, 10}
+var zipcode_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 7, 0, 7, 7, 7, 0, 7, 0, 7, 7, 7, 0, 7, 7}
+var timezone_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 7, 8, 8, 8, 7, 8, 0, 8, 8, 8, 0, 8, 8}
+var netspeed_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 11, 0, 11, 8, 11, 0, 11, 0, 11, 0, 11, 11}
+var iddcode_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 12, 0, 12, 0, 12, 9, 12, 0, 12, 12}
+var areacode_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 13, 0, 13, 0, 13, 10, 13, 0, 13, 13}
+var weatherstationcode_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 14, 0, 14, 0, 14, 0, 14, 14}
+var weatherstationname_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 15, 0, 15, 0, 15, 0, 15, 15}
+var mcc_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 16, 0, 16, 9, 16, 16}
+var mnc_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 17, 0, 17, 10, 17, 17}
+var mobilebrand_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 18, 0, 18, 11, 18, 18}
+var elevation_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 19, 0, 19, 19}
+var usagetype_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 20, 20}
+var addresstype_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21}
+var category_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22}
 
-const api_version string = "8.4.0"
+const api_version string = "9.1.0"
 
 var max_ipv4_range = big.NewInt(4294967295)
 var max_ipv6_range = big.NewInt(0)
@@ -142,32 +154,35 @@ var from_teredo = big.NewInt(0)
 var to_teredo = big.NewInt(0)
 var last_32bits = big.NewInt(4294967295)
 
-const countryshort uint32 = 0x00001
-const countrylong uint32 = 0x00002
-const region uint32 = 0x00004
-const city uint32 = 0x00008
-const isp uint32 = 0x00010
-const latitude uint32 = 0x00020
-const longitude uint32 = 0x00040
-const domain uint32 = 0x00080
-const zipcode uint32 = 0x00100
-const timezone uint32 = 0x00200
-const netspeed uint32 = 0x00400
-const iddcode uint32 = 0x00800
-const areacode uint32 = 0x01000
-const weatherstationcode uint32 = 0x02000
-const weatherstationname uint32 = 0x04000
-const mcc uint32 = 0x08000
-const mnc uint32 = 0x10000
-const mobilebrand uint32 = 0x20000
-const elevation uint32 = 0x40000
-const usagetype uint32 = 0x80000
+const countryshort uint32 = 0x000001
+const countrylong uint32 = 0x000002
+const region uint32 = 0x000004
+const city uint32 = 0x000008
+const isp uint32 = 0x000010
+const latitude uint32 = 0x000020
+const longitude uint32 = 0x000040
+const domain uint32 = 0x000080
+const zipcode uint32 = 0x000100
+const timezone uint32 = 0x000200
+const netspeed uint32 = 0x000400
+const iddcode uint32 = 0x000800
+const areacode uint32 = 0x001000
+const weatherstationcode uint32 = 0x002000
+const weatherstationname uint32 = 0x004000
+const mcc uint32 = 0x008000
+const mnc uint32 = 0x010000
+const mobilebrand uint32 = 0x020000
+const elevation uint32 = 0x040000
+const usagetype uint32 = 0x080000
+const addresstype uint32 = 0x100000
+const category uint32 = 0x200000
 
-const all uint32 = countryshort | countrylong | region | city | isp | latitude | longitude | domain | zipcode | timezone | netspeed | iddcode | areacode | weatherstationcode | weatherstationname | mcc | mnc | mobilebrand | elevation | usagetype
+const all uint32 = countryshort | countrylong | region | city | isp | latitude | longitude | domain | zipcode | timezone | netspeed | iddcode | areacode | weatherstationcode | weatherstationname | mcc | mnc | mobilebrand | elevation | usagetype | addresstype | category
 
 const invalid_address string = "Invalid IP address."
 const missing_file string = "Invalid database file."
 const not_supported string = "This parameter is unavailable for selected data file. Please upgrade the data file."
+const invalid_bin string = "Incorrect IP2Location BIN file format. Please make sure that you are using the latest IP2Location BIN file."
 
 // get IP type and calculate IP number; calculates index too if exists
 func (d *DB) checkip(ip string) (iptype uint32, ipnum *big.Int, ipindex uint32) {
@@ -307,23 +322,6 @@ func (d *DB) readfloat_row(row []byte, pos uint32) float32 {
 	return retval
 }
 
-// read float
-func (d *DB) readfloat(pos uint32) (float32, error) {
-	pos2 := int64(pos)
-	var retval float32
-	data := make([]byte, 4)
-	_, err := d.f.ReadAt(data, pos2-1)
-	if err != nil {
-		return 0, err
-	}
-	buf := bytes.NewReader(data)
-	err = binary.Read(buf, binary.LittleEndian, &retval)
-	if err != nil {
-		fmt.Printf("binary read failed: %v", err)
-	}
-	return retval, nil
-}
-
 func fatal(db *DB, err error) (*DB, error) {
 	_ = db.f.Close()
 	return nil, err
@@ -397,6 +395,22 @@ func OpenDBWithReader(reader DBReader) (*DB, error) {
 	db.meta.ipv6indexbaseaddr, err = db.readuint32(26)
 	if err != nil {
 		return fatal(db, err)
+	}
+	db.meta.productcode, err = db.readuint8(30)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.producttype, err = db.readuint8(31)
+	if err != nil {
+		return fatal(db, err)
+	}
+	db.meta.filesize, err = db.readuint32(32)
+	if err != nil {
+		return fatal(db, err)
+	}
+	// check if is correct BIN (should be 1 for IP2Location BIN file), also checking for zipped file (PK being the first 2 chars)
+	if (db.meta.productcode != 1 && db.meta.databaseyear >= 21) || (db.meta.databasetype == 80 && db.meta.databasecolumn == 75) { // only BINs from Jan 2021 onwards have this byte set
+		return fatal(db, errors.New(invalid_bin))
 	}
 	db.meta.ipv4columnsize = uint32(db.meta.databasecolumn << 2)              // 4 bytes each column
 	db.meta.ipv6columnsize = uint32(16 + ((db.meta.databasecolumn - 1) << 2)) // 4 bytes each column, except IPFrom column which is 16 bytes
@@ -479,6 +493,14 @@ func OpenDBWithReader(reader DBReader) (*DB, error) {
 		db.usagetype_position_offset = uint32(usagetype_position[dbt]-2) << 2
 		db.usagetype_enabled = true
 	}
+	if addresstype_position[dbt] != 0 {
+		db.addresstype_position_offset = uint32(addresstype_position[dbt]-2) << 2
+		db.addresstype_enabled = true
+	}
+	if category_position[dbt] != 0 {
+		db.category_position_offset = uint32(category_position[dbt]-2) << 2
+		db.category_enabled = true
+	}
 
 	db.metaok = true
 
@@ -531,6 +553,8 @@ func loadmessage(mesg string) IP2Locationrecord {
 	x.Mnc = mesg
 	x.Mobilebrand = mesg
 	x.Usagetype = mesg
+	x.Addresstype = mesg
+	x.Category = mesg
 
 	return x
 }
@@ -794,6 +818,16 @@ func (d *DB) Get_usagetype(ipaddress string) (IP2Locationrecord, error) {
 	return d.query(ipaddress, usagetype)
 }
 
+// Get_addresstype will return the address type based on the queried IP address.
+func (d *DB) Get_addresstype(ipaddress string) (IP2Locationrecord, error) {
+	return d.query(ipaddress, addresstype)
+}
+
+// Get_category will return the category based on the queried IP address.
+func (d *DB) Get_category(ipaddress string) (IP2Locationrecord, error) {
+	return d.query(ipaddress, category)
+}
+
 // main query
 func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 	x := loadmessage(not_supported) // default message
@@ -886,7 +920,6 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 			var firstcol uint32 = 4 // 4 bytes for ip from
 			if iptype == 6 {
 				firstcol = 16 // 16 bytes for ipv6
-				// rowoffset = rowoffset + 12 // coz below is assuming all columns are 4 bytes, so got 12 left to go to make 16 bytes total
 			}
 
 			row := make([]byte, colsize-firstcol) // exclude the ip from field
@@ -896,129 +929,110 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 			}
 
 			if mode&countryshort == 1 && d.country_enabled {
-				// x.Country_short = readstr(readuint32(rowoffset + country_position_offset))
 				if x.Country_short, err = d.readstr(d.readuint32_row(row, d.country_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&countrylong != 0 && d.country_enabled {
-				// x.Country_long = readstr(readuint32(rowoffset + country_position_offset) + 3)
 				if x.Country_long, err = d.readstr(d.readuint32_row(row, d.country_position_offset) + 3); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&region != 0 && d.region_enabled {
-				// x.Region = readstr(readuint32(rowoffset + region_position_offset))
 				if x.Region, err = d.readstr(d.readuint32_row(row, d.region_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&city != 0 && d.city_enabled {
-				// x.City = readstr(readuint32(rowoffset + city_position_offset))
 				if x.City, err = d.readstr(d.readuint32_row(row, d.city_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&isp != 0 && d.isp_enabled {
-				// x.Isp = readstr(readuint32(rowoffset + isp_position_offset))
 				if x.Isp, err = d.readstr(d.readuint32_row(row, d.isp_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&latitude != 0 && d.latitude_enabled {
-				// x.Latitude = readfloat(rowoffset + latitude_position_offset)
 				x.Latitude = d.readfloat_row(row, d.latitude_position_offset)
 			}
 
 			if mode&longitude != 0 && d.longitude_enabled {
-				// x.Longitude = readfloat(rowoffset + longitude_position_offset)
 				x.Longitude = d.readfloat_row(row, d.longitude_position_offset)
 			}
 
 			if mode&domain != 0 && d.domain_enabled {
-				// x.Domain = readstr(readuint32(rowoffset + domain_position_offset))
 				if x.Domain, err = d.readstr(d.readuint32_row(row, d.domain_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&zipcode != 0 && d.zipcode_enabled {
-				// x.Zipcode = readstr(readuint32(rowoffset + zipcode_position_offset))
 				if x.Zipcode, err = d.readstr(d.readuint32_row(row, d.zipcode_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&timezone != 0 && d.timezone_enabled {
-				// x.Timezone = readstr(readuint32(rowoffset + timezone_position_offset))
 				if x.Timezone, err = d.readstr(d.readuint32_row(row, d.timezone_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&netspeed != 0 && d.netspeed_enabled {
-				// x.Netspeed = readstr(readuint32(rowoffset + netspeed_position_offset))
 				if x.Netspeed, err = d.readstr(d.readuint32_row(row, d.netspeed_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&iddcode != 0 && d.iddcode_enabled {
-				// x.Iddcode = readstr(readuint32(rowoffset + iddcode_position_offset))
 				if x.Iddcode, err = d.readstr(d.readuint32_row(row, d.iddcode_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&areacode != 0 && d.areacode_enabled {
-				// x.Areacode = readstr(readuint32(rowoffset + areacode_position_offset))
 				if x.Areacode, err = d.readstr(d.readuint32_row(row, d.areacode_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&weatherstationcode != 0 && d.weatherstationcode_enabled {
-				// x.Weatherstationcode = readstr(readuint32(rowoffset + weatherstationcode_position_offset))
 				if x.Weatherstationcode, err = d.readstr(d.readuint32_row(row, d.weatherstationcode_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&weatherstationname != 0 && d.weatherstationname_enabled {
-				// x.Weatherstationname = readstr(readuint32(rowoffset + weatherstationname_position_offset))
 				if x.Weatherstationname, err = d.readstr(d.readuint32_row(row, d.weatherstationname_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&mcc != 0 && d.mcc_enabled {
-				// x.Mcc = readstr(readuint32(rowoffset + mcc_position_offset))
 				if x.Mcc, err = d.readstr(d.readuint32_row(row, d.mcc_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&mnc != 0 && d.mnc_enabled {
-				// x.Mnc = readstr(readuint32(rowoffset + mnc_position_offset))
 				if x.Mnc, err = d.readstr(d.readuint32_row(row, d.mnc_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&mobilebrand != 0 && d.mobilebrand_enabled {
-				// x.Mobilebrand = readstr(readuint32(rowoffset + mobilebrand_position_offset))
 				if x.Mobilebrand, err = d.readstr(d.readuint32_row(row, d.mobilebrand_position_offset)); err != nil {
 					return x, err
 				}
 			}
 
 			if mode&elevation != 0 && d.elevation_enabled {
-				// f, _ := strconv.ParseFloat(readstr(readuint32(rowoffset + elevation_position_offset)), 32)
 				res, err := d.readstr(d.readuint32_row(row, d.elevation_position_offset))
 				if err != nil {
 					return x, err
@@ -1029,8 +1043,19 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 			}
 
 			if mode&usagetype != 0 && d.usagetype_enabled {
-				// x.Usagetype = readstr(readuint32(rowoffset + usagetype_position_offset))
 				if x.Usagetype, err = d.readstr(d.readuint32_row(row, d.usagetype_position_offset)); err != nil {
+					return x, err
+				}
+			}
+
+			if mode&addresstype != 0 && d.addresstype_enabled {
+				if x.Addresstype, err = d.readstr(d.readuint32_row(row, d.addresstype_position_offset)); err != nil {
+					return x, err
+				}
+			}
+
+			if mode&category != 0 && d.category_enabled {
+				if x.Category, err = d.readstr(d.readuint32_row(row, d.category_position_offset)); err != nil {
 					return x, err
 				}
 			}
@@ -1073,4 +1098,6 @@ func Printrecord(x IP2Locationrecord) {
 	fmt.Printf("mobilebrand: %s\n", x.Mobilebrand)
 	fmt.Printf("elevation: %f\n", x.Elevation)
 	fmt.Printf("usagetype: %s\n", x.Usagetype)
+	fmt.Printf("addresstype: %s\n", x.Addresstype)
+	fmt.Printf("category: %s\n", x.Category)
 }
