@@ -262,3 +262,136 @@ func main() {
 	fmt.Printf("Credit Balance: %d\n", res2.Response)
 }
 ```
+
+## IPTOOLS CLASS
+
+## Methods
+Below are the methods supported in this package.
+
+|Method Name|Description|
+|---|---|
+|func (t *IPTools) IsIPv4(IP string) bool|Returns true if string contains an IPv4 address. Otherwise false.|
+|func (t *IPTools) IsIPv6(IP string) bool|Returns true if string contains an IPv6 address. Otherwise false.|
+|func (t *IPTools) IPv4ToDecimal(IP string) (*big.Int, error)|Returns the IP number for an IPv4 address.|
+|func (t *IPTools) IPv6ToDecimal(IP string) (*big.Int, error)|Returns the IP number for an IPv6 address.|
+|func (t *IPTools) DecimalToIPv4(IPNum *big.Int) (string, error)|Returns the IPv4 address for the supplied IP number.|
+|func (t *IPTools) DecimalToIPv6(IPNum *big.Int) (string, error)|Returns the IPv6 address for the supplied IP number.|
+|func (t *IPTools) CompressIPv6(IP string) (string, error)|Returns the IPv6 address in compressed form.|
+|func (t *IPTools) ExpandIPv6(IP string) (string, error)|Returns the IPv6 address in expanded form.|
+|func (t *IPTools) IPv4ToCIDR(IPFrom string, IPTo string) ([]string, error)|Returns a list of CIDR from the supplied IPv4 range.|
+|func (t *IPTools) IPv6ToCIDR(IPFrom string, IPTo string) ([]string, error)|Returns a list of CIDR from the supplied IPv6 range.|
+|func (t *IPTools) CIDRToIPv4(CIDR string) ([]string, error)|Returns the IPv4 range from the supplied CIDR.|
+|func (t *IPTools) CIDRToIPv6(CIDR string) ([]string, error)|Returns the IPv6 range from the supplied CIDR.|
+
+## Usage
+
+```go
+package main
+
+import (
+	"github.com/ip2location/ip2location-go"
+	"fmt"
+	"math/big"
+)
+
+func main() {
+	t := ip2location.OpenTools()
+	
+	ip := "8.8.8.8"
+	res := t.IsIPv4(ip)
+	
+	fmt.Printf("Is IPv4: %t\n", res)
+	
+	ipnum, err := t.IPv4ToDecimal(ip)
+	if err != nil {
+		fmt.Print(err)
+	} else {
+		fmt.Printf("IPNum: %v\n", ipnum)
+	}
+
+	ip2 := "2600:1f18:45b0:5b00:f5d8:4183:7710:ceec"
+	res2 := t.IsIPv6(ip2)
+	
+	fmt.Printf("Is IPv6: %t\n", res2)
+
+	ipnum2, err := t.IPv6ToDecimal(ip2)
+	if err != nil {
+		fmt.Print(err)
+	} else {
+		fmt.Printf("IPNum: %v\n", ipnum2)
+	}
+	
+	ipnum3 := big.NewInt(42534)
+	res3, err := t.DecimalToIPv4(ipnum3)
+	
+	if err != nil {
+		fmt.Print(err)
+	} else {
+		fmt.Printf("IPv4: %v\n", res3)
+	}
+	
+	ipnum4, ok := big.NewInt(0).SetString("22398978840339333967292465152", 10)
+	if ok {
+		res4, err := t.DecimalToIPv6(ipnum4)
+		if err != nil {
+			fmt.Print(err)
+		} else {
+			fmt.Printf("IPv6: %v\n", res4)
+		}
+	}
+	
+	ip3 := "2600:1f18:045b:005b:f5d8:0:000:ceec"
+	res5, err := t.CompressIPv6(ip3)
+	
+	if err != nil {
+		fmt.Print(err)
+	} else {
+		fmt.Printf("Compressed: %v\n", res5)
+	}
+	
+	ip4 := "::45b:05b:f5d8:0:000:ceec"
+	res6, err := t.ExpandIPv6(ip4)
+	
+	if err != nil {
+		fmt.Print(err)
+	} else {
+		fmt.Printf("Expanded: %v\n", res6)
+	}
+	
+	res7, err := t.IPv4ToCIDR("10.0.0.0", "10.10.2.255")
+	
+	if err != nil {
+		fmt.Print(err)
+	} else {
+		for _, element := range res7 {
+			fmt.Println(element)
+		}
+	}
+	
+	res8, err := t.IPv6ToCIDR("2001:4860:4860:0000:0000:0000:0000:8888", "2001:4860:4860:0000:eeee:ffff:ffff:ffff")
+	
+	if err != nil {
+		fmt.Print(err)
+	} else {
+		for _, element := range res8 {
+			fmt.Println(element)
+		}
+	}
+	
+	res9, err := t.CIDRToIPv4("123.245.99.13/26")
+	
+	if err != nil {
+		fmt.Print(err)
+	} else {
+		fmt.Printf("IPv4 Range: %v\n", res9)
+	}
+	
+	res10, err := t.CIDRToIPv6("2002:1234::abcd:ffff:c0a8:101/62")
+	
+	if err != nil {
+		fmt.Print(err)
+	} else {
+		fmt.Printf("IPv6 Range: %v\n", res10)
+	}
+}
+```
