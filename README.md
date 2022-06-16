@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/ip2location/ip2location-go)](https://goreportcard.com/report/github.com/ip2location/ip2location-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ip2location/ip2location-go/v9)](https://goreportcard.com/report/github.com/ip2location/ip2location-go/v9)
 
 
 # IP2Location Go Package
@@ -84,7 +84,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/ip2location/ip2location-go"
+	"github.com/ip2location/ip2location-go/v9"
 )
 
 func main() {
@@ -147,7 +147,7 @@ Below are the methods supported in this package.
 package main
 
 import (
-	"github.com/ip2location/ip2location-go"
+	"github.com/ip2location/ip2location-go/v9"
 	"fmt"
 )
 
@@ -289,7 +289,7 @@ Below are the methods supported in this package.
 package main
 
 import (
-	"github.com/ip2location/ip2location-go"
+	"github.com/ip2location/ip2location-go/v9"
 	"fmt"
 	"math/big"
 )
