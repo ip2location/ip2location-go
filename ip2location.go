@@ -31,6 +31,8 @@ type ip2locationmeta struct {
 	ipv4databaseaddr  uint32
 	ipv6databasecount uint32
 	ipv6databaseaddr  uint32
+	ipv4indexed       bool
+	ipv6indexed       bool
 	ipv4indexbaseaddr uint32
 	ipv6indexbaseaddr uint32
 	ipv4columnsize    uint32
@@ -142,7 +144,7 @@ var usagetype_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 var addresstype_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21}
 var category_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22}
 
-const api_version string = "9.3.0"
+const api_version string = "9.4.0"
 
 var max_ipv4_range = big.NewInt(4294967295)
 var max_ipv6_range = big.NewInt(0)
@@ -224,13 +226,13 @@ func (d *DB) checkip(ip string) (iptype uint32, ipnum *big.Int, ipindex uint32) 
 		}
 	}
 	if iptype == 4 {
-		if d.meta.ipv4indexbaseaddr > 0 {
+		if d.meta.ipv4indexed {
 			ipnumtmp.Rsh(ipnum, 16)
 			ipnumtmp.Lsh(ipnumtmp, 3)
 			ipindex = uint32(ipnumtmp.Add(ipnumtmp, big.NewInt(int64(d.meta.ipv4indexbaseaddr))).Uint64())
 		}
 	} else if iptype == 6 {
-		if d.meta.ipv6indexbaseaddr > 0 {
+		if d.meta.ipv6indexed {
 			ipnumtmp.Rsh(ipnum, 112)
 			ipnumtmp.Lsh(ipnumtmp, 3)
 			ipindex = uint32(ipnumtmp.Add(ipnumtmp, big.NewInt(int64(d.meta.ipv6indexbaseaddr))).Uint64())
@@ -249,6 +251,17 @@ func (d *DB) readuint8(pos int64) (uint8, error) {
 	}
 	retval = data[0]
 	return retval, nil
+}
+
+// read row
+func (d *DB) read_row(pos uint32, size uint32) ([]byte, error) {
+	pos2 := int64(pos)
+	data := make([]byte, size)
+	_, err := d.f.ReadAt(data, pos2-1)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // read unsigned 32-bit integer from slices
@@ -276,6 +289,19 @@ func (d *DB) readuint32(pos uint32) (uint32, error) {
 	return retval, nil
 }
 
+// read unsigned 128-bit integer from slices
+func (d *DB) readuint128_row(row []byte, pos uint32) *big.Int {
+	retval := big.NewInt(0)
+	data := row[pos : pos+16]
+
+	// little endian to big endian
+	for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
+		data[i], data[j] = data[j], data[i]
+	}
+	retval.SetBytes(data)
+	return retval
+}
+
 // read unsigned 128-bit integer
 func (d *DB) readuint128(pos uint32) (*big.Int, error) {
 	pos2 := int64(pos)
@@ -297,19 +323,15 @@ func (d *DB) readuint128(pos uint32) (*big.Int, error) {
 // read string
 func (d *DB) readstr(pos uint32) (string, error) {
 	pos2 := int64(pos)
+	readlen := 256 // max size of string field + 1 byte for the length
 	var retval string
-	lenbyte := make([]byte, 1)
-	_, err := d.f.ReadAt(lenbyte, pos2)
+	data := make([]byte, readlen)
+	_, err := d.f.ReadAt(data, pos2)
 	if err != nil {
 		return "", err
 	}
-	strlen := lenbyte[0]
-	data := make([]byte, strlen)
-	_, err = d.f.ReadAt(data, pos2+1)
-	if err != nil {
-		return "", err
-	}
-	retval = string(data[:strlen])
+	strlen := data[0]
+	retval = string(data[1:(strlen + 1)])
 	return retval, nil
 }
 
@@ -351,67 +373,42 @@ func OpenDBWithReader(reader DBReader) (*DB, error) {
 
 	db.f = reader
 
+	var row []byte
 	var err error
-	db.meta.databasetype, err = db.readuint8(1)
+	readlen := uint32(64) // 64-byte header
+
+	row, err = db.read_row(1, readlen)
 	if err != nil {
 		return fatal(db, err)
 	}
-	db.meta.databasecolumn, err = db.readuint8(2)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.databaseyear, err = db.readuint8(3)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.databasemonth, err = db.readuint8(4)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.databaseday, err = db.readuint8(5)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.ipv4databasecount, err = db.readuint32(6)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.ipv4databaseaddr, err = db.readuint32(10)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.ipv6databasecount, err = db.readuint32(14)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.ipv6databaseaddr, err = db.readuint32(18)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.ipv4indexbaseaddr, err = db.readuint32(22)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.ipv6indexbaseaddr, err = db.readuint32(26)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.productcode, err = db.readuint8(30)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.producttype, err = db.readuint8(31)
-	if err != nil {
-		return fatal(db, err)
-	}
-	db.meta.filesize, err = db.readuint32(32)
-	if err != nil {
-		return fatal(db, err)
-	}
+	db.meta.databasetype = row[0]
+	db.meta.databasecolumn = row[1]
+	db.meta.databaseyear = row[2]
+	db.meta.databasemonth = row[3]
+	db.meta.databaseday = row[4]
+	db.meta.ipv4databasecount = db.readuint32_row(row, 5)
+	db.meta.ipv4databaseaddr = db.readuint32_row(row, 9)
+	db.meta.ipv6databasecount = db.readuint32_row(row, 13)
+	db.meta.ipv6databaseaddr = db.readuint32_row(row, 17)
+	db.meta.ipv4indexbaseaddr = db.readuint32_row(row, 21)
+	db.meta.ipv6indexbaseaddr = db.readuint32_row(row, 25)
+	db.meta.productcode = row[29]
+	db.meta.producttype = row[30]
+	db.meta.filesize = db.readuint32_row(row, 31)
+
 	// check if is correct BIN (should be 1 for IP2Location BIN file), also checking for zipped file (PK being the first 2 chars)
 	if (db.meta.productcode != 1 && db.meta.databaseyear >= 21) || (db.meta.databasetype == 80 && db.meta.databasecolumn == 75) { // only BINs from Jan 2021 onwards have this byte set
 		return fatal(db, errors.New(invalid_bin))
 	}
+
+	if db.meta.ipv4indexbaseaddr > 0 {
+		db.meta.ipv4indexed = true
+	}
+
+	if db.meta.ipv6databasecount > 0 && db.meta.ipv6indexbaseaddr > 0 {
+		db.meta.ipv6indexed = true
+	}
+
 	db.meta.ipv4columnsize = uint32(db.meta.databasecolumn << 2)              // 4 bytes each column
 	db.meta.ipv6columnsize = uint32(16 + ((db.meta.databasecolumn - 1) << 2)) // 4 bytes each column, except IPFrom column which is 16 bytes
 
@@ -853,7 +850,10 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 	var high uint32
 	var mid uint32
 	var rowoffset uint32
-	var rowoffset2 uint32
+	var firstcol uint32 = 4 // 4 bytes for ip from
+	var row []byte
+	var fullrow []byte
+	var readlen uint32
 	ipfrom := big.NewInt(0)
 	ipto := big.NewInt(0)
 	maxip := big.NewInt(0)
@@ -864,6 +864,7 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 		maxip = max_ipv4_range
 		colsize = d.meta.ipv4columnsize
 	} else {
+		firstcol = 16 // 16 bytes for ip from
 		baseaddr = d.meta.ipv6databaseaddr
 		high = d.meta.ipv6databasecount
 		maxip = max_ipv6_range
@@ -872,14 +873,12 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 
 	// reading index
 	if ipindex > 0 {
-		low, err = d.readuint32(ipindex)
+		row, err = d.read_row(ipindex, 8) // 4 bytes each for IP From and IP To
 		if err != nil {
 			return x, err
 		}
-		high, err = d.readuint32(ipindex + 4)
-		if err != nil {
-			return x, err
-		}
+		low = d.readuint32_row(row, 0)
+		high = d.readuint32_row(row, 4)
 	}
 
 	if ipno.Cmp(maxip) >= 0 {
@@ -889,44 +888,30 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 	for low <= high {
 		mid = ((low + high) >> 1)
 		rowoffset = baseaddr + (mid * colsize)
-		rowoffset2 = rowoffset + colsize
+
+		// reading IP From + whole row + next IP From
+		readlen = colsize + firstcol
+		fullrow, err = d.read_row(rowoffset, readlen)
+		if err != nil {
+			return x, err
+		}
 
 		if iptype == 4 {
-			ipfrom32, err := d.readuint32(rowoffset)
-			if err != nil {
-				return x, err
-			}
+			ipfrom32 := d.readuint32_row(fullrow, 0)
 			ipfrom = big.NewInt(int64(ipfrom32))
 
-			ipto32, err := d.readuint32(rowoffset2)
-			if err != nil {
-				return x, err
-			}
+			ipto32 := d.readuint32_row(fullrow, colsize)
 			ipto = big.NewInt(int64(ipto32))
 
 		} else {
-			ipfrom, err = d.readuint128(rowoffset)
-			if err != nil {
-				return x, err
-			}
+			ipfrom = d.readuint128_row(fullrow, 0)
 
-			ipto, err = d.readuint128(rowoffset2)
-			if err != nil {
-				return x, err
-			}
+			ipto = d.readuint128_row(fullrow, colsize)
 		}
 
 		if ipno.Cmp(ipfrom) >= 0 && ipno.Cmp(ipto) < 0 {
-			var firstcol uint32 = 4 // 4 bytes for ip from
-			if iptype == 6 {
-				firstcol = 16 // 16 bytes for ipv6
-			}
-
-			row := make([]byte, colsize-firstcol) // exclude the ip from field
-			_, err := d.f.ReadAt(row, int64(rowoffset+firstcol-1))
-			if err != nil {
-				return x, err
-			}
+			rowlen := colsize - firstcol
+			row = fullrow[firstcol:(firstcol + rowlen)] // extract the actual row data
 
 			if mode&countryshort == 1 && d.country_enabled {
 				if x.Country_short, err = d.readstr(d.readuint32_row(row, d.country_position_offset)); err != nil {
