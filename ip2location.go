@@ -144,7 +144,7 @@ var usagetype_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 var addresstype_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21}
 var category_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22}
 
-const api_version string = "9.4.0"
+const api_version string = "9.4.1"
 
 var max_ipv4_range = big.NewInt(4294967295)
 var max_ipv6_range = big.NewInt(0)
@@ -327,7 +327,7 @@ func (d *DB) readstr(pos uint32) (string, error) {
 	var retval string
 	data := make([]byte, readlen)
 	_, err := d.f.ReadAt(data, pos2)
-	if err != nil {
+	if err != nil && err.Error() != "EOF" { // bypass EOF error coz we are reading 256 which may hit EOF
 		return "", err
 	}
 	strlen := data[0]
@@ -902,7 +902,6 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 
 			ipto32 := d.readuint32_row(fullrow, colsize)
 			ipto = big.NewInt(int64(ipto32))
-
 		} else {
 			ipfrom = d.readuint128_row(fullrow, 0)
 
