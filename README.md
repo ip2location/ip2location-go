@@ -395,3 +395,122 @@ func main() {
 	}
 }
 ```
+
+## COUNTRY CLASS
+
+## Methods
+Below are the methods supported in this package.
+
+|Method Name|Description|
+|---|---|
+|func OpenCountryInfo(csvFile string) (*CI, error)|Expect a IP2Location Country Information CSV file. This database is free for download at https://www.ip2location.com/free/country-information|
+|func (c *CI) GetCountryInfo(countryCode ...string) ([]CountryInfoRecord, error)|Returns the country information for specified country or all countries.|
+
+## Usage
+
+```go
+package main
+
+import (
+	"github.com/ip2location/ip2location-go"
+	"fmt"
+)
+
+func main() {
+	c, err := ip2location.OpenCountryInfo("./IP2LOCATION-COUNTRY-INFORMATION.CSV")
+
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+
+	res, err := c.GetCountryInfo("US")
+
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+
+	fmt.Printf("country_code: %s\n", res[0].Country_code)
+	fmt.Printf("country_name: %s\n", res[0].Country_name)
+	fmt.Printf("country_alpha3_code: %s\n", res[0].Country_alpha3_code)
+	fmt.Printf("country_numeric_code: %s\n", res[0].Country_numeric_code)
+	fmt.Printf("capital: %s\n", res[0].Capital)
+	fmt.Printf("country_demonym: %s\n", res[0].Country_demonym)
+	fmt.Printf("total_area: %s\n", res[0].Total_area)
+	fmt.Printf("population: %s\n", res[0].Population)
+	fmt.Printf("idd_code: %s\n", res[0].Idd_code)
+	fmt.Printf("currency_code: %s\n", res[0].Currency_code)
+	fmt.Printf("currency_name: %s\n", res[0].Currency_name)
+	fmt.Printf("currency_symbol: %s\n", res[0].Currency_symbol)
+	fmt.Printf("lang_code: %s\n", res[0].Lang_code)
+	fmt.Printf("lang_name: %s\n", res[0].Lang_name)
+	fmt.Printf("cctld: %s\n", res[0].Cctld)
+	fmt.Print("==============================================\n")
+
+	res2, err := c.GetCountryInfo()
+
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+
+	for _, v := range res2 {
+		fmt.Printf("country_code: %s\n", v.Country_code)
+		fmt.Printf("country_name: %s\n", v.Country_name)
+		fmt.Printf("country_alpha3_code: %s\n", v.Country_alpha3_code)
+		fmt.Printf("country_numeric_code: %s\n", v.Country_numeric_code)
+		fmt.Printf("capital: %s\n", v.Capital)
+		fmt.Printf("country_demonym: %s\n", v.Country_demonym)
+		fmt.Printf("total_area: %s\n", v.Total_area)
+		fmt.Printf("population: %s\n", v.Population)
+		fmt.Printf("idd_code: %s\n", v.Idd_code)
+		fmt.Printf("currency_code: %s\n", v.Currency_code)
+		fmt.Printf("currency_name: %s\n", v.Currency_name)
+		fmt.Printf("currency_symbol: %s\n", v.Currency_symbol)
+		fmt.Printf("lang_code: %s\n", v.Lang_code)
+		fmt.Printf("lang_name: %s\n", v.Lang_name)
+		fmt.Printf("cctld: %s\n", v.Cctld)
+		fmt.Print("==============================================\n")
+	}
+}
+```
+
+## REGION CLASS
+
+## Methods
+Below are the methods supported in this package.
+
+|Method Name|Description|
+|---|---|
+|func OpenRegionInfo(csvFile string) (*RI, error)|Expect a IP2Location ISO 3166-2 Subdivision Code CSV file. This database is free for download at https://www.ip2location.com/free/iso3166-2|
+|func (r *RI) GetRegionCode(countryCode string, regionName string) (string, error)|Returns the region code for the supplied country code and region name.|
+
+## Usage
+
+```go
+package main
+
+import (
+	"github.com/ip2location/ip2location-go"
+	"fmt"
+)
+
+func main() {
+	r, err := ip2location.OpenRegionInfo("./IP2LOCATION-ISO3166-2.CSV")
+
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+
+	res, err := r.GetRegionCode("US", "California")
+
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+
+	fmt.Printf("region code: %s\n", res)
+}
+```
