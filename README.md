@@ -3,7 +3,7 @@
 
 # IP2Location Go Package
 
-This Go package provides a fast lookup of country, region, city, latitude, longitude, ZIP code, time zone, ISP, domain name, connection type, IDD code, area code, weather station code, station name, mcc, mnc, mobile brand, elevation, usage type, address type and IAB category from IP address by using IP2Location database. This package uses a file based database available at IP2Location.com. This database simply contains IP blocks as keys, and other information such as country, region, city, latitude, longitude, ZIP code, time zone, ISP, domain name, connection type, IDD code, area code, weather station code, station name, mcc, mnc, mobile brand, elevation, usage type, address type and IAB category as values. It supports both IP address in IPv4 and IPv6.
+This Go package provides a fast lookup of country, region, city, latitude, longitude, ZIP code, time zone, ISP, domain name, connection type, IDD code, area code, weather station code, station name, mcc, mnc, mobile brand, elevation, usage type, address type, IAB category, district, autonomous system number (ASN) and autonomous system (AS) from IP address by using IP2Location database. This package uses a file based database available at IP2Location.com. This database simply contains IP blocks as keys, and other information such as country, region, city, latitude, longitude, ZIP code, time zone, ISP, domain name, connection type, IDD code, area code, weather station code, station name, mcc, mnc, mobile brand, elevation, usage type, address type, IAB category, district, autonomous system number (ASN) and autonomous system (AS) as values. It supports both IP address in IPv4 and IPv6.
 
 This package can be used in many types of projects such as:
 
@@ -75,6 +75,9 @@ Below are the methods supported in this package.
 |Get_usagetype|Returns the usage type.|
 |Get_addresstype|Returns the address type.|
 |Get_category|Returns the IAB category.|
+|Get_district|Returns the district name.|
+|Get_asn|Returns the autonomous system number (ASN).|
+|Get_as|Returns the autonomous system (AS).|
 |Close|Closes BIN file.|
 
 ## Usage
@@ -88,7 +91,7 @@ import (
 )
 
 func main() {
-	db, err := ip2location.OpenDB("./IP-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE-TIMEZONE-ISP-DOMAIN-NETSPEED-AREACODE-WEATHER-MOBILE-ELEVATION-USAGETYPE-ADDRESSTYPE-CATEGORY.BIN")
+	db, err := ip2location.OpenDB("./IP-COUNTRY-REGION-CITY-LATITUDE-LONGITUDE-ZIPCODE-TIMEZONE-ISP-DOMAIN-NETSPEED-AREACODE-WEATHER-MOBILE-ELEVATION-USAGETYPE-ADDRESSTYPE-CATEGORY-DISTRICT-ASN.BIN")
 	
 	if err != nil {
 		fmt.Print(err)
@@ -124,6 +127,9 @@ func main() {
 	fmt.Printf("usagetype: %s\n", results.Usagetype)
 	fmt.Printf("addresstype: %s\n", results.Addresstype)
 	fmt.Printf("category: %s\n", results.Category)
+	fmt.Printf("district: %s\n", results.District)
+	fmt.Printf("asn: %s\n", results.Asn)
+	fmt.Printf("as: %s\n", results.As)
 	fmt.Printf("api version: %s\n", ip2location.Api_version())
 	
 	db.Close()
