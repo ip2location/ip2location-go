@@ -146,7 +146,7 @@ var usagetype_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 var addresstype_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21}
 var category_position = [26]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 22}
 
-const api_version string = "9.5.0"
+const api_version string = "9.5.1"
 
 var max_ipv4_range = uint128.From64(4294967295)
 var max_ipv6_range = uint128.From64(0)
@@ -188,6 +188,12 @@ const missing_file string = "Invalid database file."
 const not_supported string = "This parameter is unavailable for selected data file. Please upgrade the data file."
 const invalid_bin string = "Incorrect IP2Location BIN file format. Please make sure that you are using the latest IP2Location BIN file."
 
+func reverseBytes(s []byte) {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+}
+
 // get IP type and calculate IP number; calculates index too if exists
 func (d *DB) checkip(ip string) (iptype uint32, ipnum uint128.Uint128, ipindex uint32) {
 	iptype = 0
@@ -207,7 +213,8 @@ func (d *DB) checkip(ip string) (iptype uint32, ipnum uint128.Uint128, ipindex u
 
 			if v6 != nil {
 				iptype = 6
-				ipnum.PutBytes(v6)
+				reverseBytes(v6)
+				ipnum = uint128.FromBytes(v6)
 
 				if ipnum.Cmp(from_v4mapped) >= 0 && ipnum.Cmp(to_v4mapped) <= 0 {
 					// ipv4-mapped ipv6 should treat as ipv4 and read ipv4 data section
@@ -297,10 +304,10 @@ func (d *DB) readuint128_row(row []byte, pos uint32) uint128.Uint128 {
 	data := row[pos : pos+16]
 
 	// little endian to big endian
-	for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
-		data[i], data[j] = data[j], data[i]
-	}
-	retval.PutBytes(data)
+	// for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
+	// data[i], data[j] = data[j], data[i]
+	// }
+	retval = uint128.FromBytes(data)
 	return retval
 }
 
@@ -315,10 +322,10 @@ func (d *DB) readuint128(pos uint32) (uint128.Uint128, error) {
 	}
 
 	// little endian to big endian
-	for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
-		data[i], data[j] = data[j], data[i]
-	}
-	retval.PutBytes(data)
+	// for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
+	// data[i], data[j] = data[j], data[i]
+	// }
+	retval = uint128.FromBytes(data)
 	return retval, nil
 }
 
