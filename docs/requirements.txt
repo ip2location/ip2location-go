@@ -1,0 +1,6 @@
+# Defining the exact version will make sure things don't break
+sphinx-book-theme==1.0.1
+# sphinx-pdj-theme==0.4.0
+myst-parser==2.0.0
+markdown-it-py==3.0.0
+sphinx-copybutton==0.5.2
