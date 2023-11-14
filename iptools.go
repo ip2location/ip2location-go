@@ -448,31 +448,43 @@ func (t *IPTools) CIDRToIPv6(CIDR string) ([]string, error) {
 		return nil, errors.New("Not a valid CIDR.")
 	}
 
-	hexstartaddress, _ := t.ExpandIPv6(ip)
-	hexstartaddress = strings.ReplaceAll(hexstartaddress, ":", "")
-	hexendaddress := hexstartaddress
+	expand, _ := t.ExpandIPv6(ip)
+	parts := strings.Split(expand, ":")
 
-	bits := 128 - prefix
-	pos := 31
+	bitStart := strings.Repeat("1", prefix) + strings.Repeat("0", 128-prefix)
+	bitEnd := strings.Repeat("0", prefix) + strings.Repeat("1", 128-prefix)
 
-	for bits > 0 {
-		values := []int{4, bits}
-		min, _ := t.minMax(values)
-		x, _ := strconv.ParseInt(string(hexendaddress[pos]), 16, 64)
-		y := fmt.Sprintf("%x", (x | int64(math.Pow(2, float64(min))-1)))
-
-		hexendaddress = hexendaddress[:pos] + y + hexendaddress[pos+1:]
-
-		bits = bits - 4
-		pos = pos - 1
+	n := 16 // split string into 16-char parts
+	floors := []string{}
+	for i := 0; i < len(bitStart); i += n {
+		end := i + n
+		if end > len(bitStart) {
+			end = len(bitStart)
+		}
+		floors = append(floors, bitStart[i:end])
+	}
+	ceilings := []string{}
+	for i := 0; i < len(bitEnd); i += n {
+		end := i + n
+		if end > len(bitEnd) {
+			end = len(bitEnd)
+		}
+		ceilings = append(ceilings, bitEnd[i:end])
 	}
 
-	re2 := regexp.MustCompile(`(.{4})`)
-	hexstartaddress = re2.ReplaceAllString(hexstartaddress, "$1:")
-	hexstartaddress = strings.TrimSuffix(hexstartaddress, ":")
-	hexendaddress = re2.ReplaceAllString(hexendaddress, "$1:")
-	hexendaddress = strings.TrimSuffix(hexendaddress, ":")
+	start := []string{}
+	end := []string{}
 
+	for i := 0; i < 8; i += 1 {
+		p, _ := strconv.ParseUint(parts[i], 16, 64)
+		f, _ := strconv.ParseUint(floors[i], 2, 64)
+		c, _ := strconv.ParseUint(ceilings[i], 2, 64)
+		start = append(start, strconv.FormatUint(p&f, 16))
+		end = append(end, strconv.FormatUint(p|c, 16))
+	}
+
+	hexstartaddress, _ := t.ExpandIPv6(strings.Join(start, ":"))
+	hexendaddress, _ := t.ExpandIPv6(strings.Join(end, ":"))
 	result := []string{hexstartaddress, hexendaddress}
 
 	return result, nil

@@ -159,7 +159,7 @@ var district_position = [27]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 var asn_position = [27]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24}
 var as_position = [27]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25}
 
-const api_version string = "9.6.0"
+const api_version string = "9.6.1"
 
 var max_ipv4_range = uint128.From64(4294967295)
 var max_ipv6_range = uint128.From64(0)
