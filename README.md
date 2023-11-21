@@ -20,8 +20,8 @@ The database will be updated in monthly basis for the greater accuracy. Free LIT
 The paid databases are available at https://www.ip2location.com under Premium subscription package.
 
 As an alternative, this package can also call the IP2Location Web Service. This requires an API key. If you don't have an existing API key, you can subscribe for one at the below:
-
 https://www.ip2location.com/web-service/ip2location
+
 Developer Documentation
 =====================
 
