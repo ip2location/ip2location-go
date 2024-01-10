@@ -1150,8 +1150,20 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 	return x, nil
 }
 
-func (d *DB) Close() {
-	_ = d.f.Close()
+// PackageVersion returns the database type.
+func (d *DB) PackageVersion() string {
+	return strconv.Itoa(int(d.meta.databasetype))
+}
+
+// DatabaseVersion returns the database version.
+func (d *DB) DatabaseVersion() string {
+	return "20" + strconv.Itoa(int(d.meta.databaseyear)) + "." + strconv.Itoa(int(d.meta.databasemonth)) + "." + strconv.Itoa(int(d.meta.databaseday))
+}
+
+// Close is used to close file descriptor.
+func (d *DB) Close() error {
+	err := d.f.Close()
+	return err
 }
 
 // Printrecord is used to output the geolocation data for debugging purposes.
