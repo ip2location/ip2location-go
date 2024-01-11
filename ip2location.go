@@ -159,7 +159,7 @@ var district_position = [27]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 var asn_position = [27]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24}
 var as_position = [27]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25}
 
-const api_version string = "9.6.1"
+const api_version string = "9.7.0"
 
 var max_ipv4_range = uint128.From64(4294967295)
 var max_ipv6_range = uint128.From64(0)
@@ -578,6 +578,16 @@ func Close() {
 // Api_version returns the version of the component.
 func Api_version() string {
 	return api_version
+}
+
+// PackageVersion returns the database type.
+func (d *DB) PackageVersion() string {
+	return strconv.Itoa(int(d.meta.databasetype))
+}
+
+// DatabaseVersion returns the database version.
+func (d *DB) DatabaseVersion() string {
+	return "20" + strconv.Itoa(int(d.meta.databaseyear)) + "." + strconv.Itoa(int(d.meta.databasemonth)) + "." + strconv.Itoa(int(d.meta.databaseday))
 }
 
 // populate record with message
