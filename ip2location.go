@@ -159,7 +159,7 @@ var district_position = [27]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 var asn_position = [27]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24}
 var as_position = [27]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 25}
 
-const api_version string = "9.7.0"
+const api_version string = "9.7.1"
 
 var max_ipv4_range = uint128.From64(4294967295)
 var max_ipv6_range = uint128.From64(0)
@@ -203,6 +203,7 @@ const invalid_address string = "Invalid IP address."
 const missing_file string = "Invalid database file."
 const not_supported string = "This parameter is unavailable for selected data file. Please upgrade the data file."
 const invalid_bin string = "Incorrect IP2Location BIN file format. Please make sure that you are using the latest IP2Location BIN file."
+const ipv6_not_supported string = "IPv6 address missing in IPv4 BIN."
 
 func reverseBytes(s []byte) {
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
@@ -950,6 +951,10 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 		maxip = max_ipv4_range
 		colsize = d.meta.ipv4columnsize
 	} else {
+		if d.meta.ipv6databasecount == 0 {
+			x = loadmessage(ipv6_not_supported)
+			return x, nil
+		}
 		firstcol = 16 // 16 bytes for ip from
 		baseaddr = d.meta.ipv6databaseaddr
 		high = d.meta.ipv6databasecount
